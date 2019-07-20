@@ -1,6 +1,7 @@
 from flask import Flask, request,render_template, jsonify,json
 import psycopg2
 import datetime
+import sqlite3
 from fpdf import FPDF
 import email, smtplib, ssl
 from flask_mail import Mail, Message
@@ -22,9 +23,6 @@ app.config.update(
 )
 mail = Mail(app)
 
-conn = psycopg2.connect(user="ogpjmzmjumdfbt", password="8df63f5dd3ec150eab2a60c4ba250606b19cdb2bdf240b1c91c18cc3df52fe75", host="ec2-54-247-81-88.eu-west-1.compute.amazonaws.com", port="5432", database="d5crgts94o7lje")
-cursor = conn.cursor()
-
 
 @app.route('/',methods=['GET','POST'])
 def landing_page():
@@ -33,8 +31,12 @@ def landing_page():
 # live endpoint 
 @app.route('/live', methods=['GET', 'POST'])
 def live():
-    cursor.execute('SELECT * FROM public.flow_meter order by id desc limit 1')
-    rec = cursor.fetchall()
+    conn = sqlite3.connect('flow_meter1.db')
+    cursor = conn.cursor()
+    d = 'SELECT * FROM flow_meter_example order by id desc limit 1'
+    print(d)
+    cursor.execute(d)
+    rec= cursor.fetchall()
     for r in rec:
         print(r)
         if r:
@@ -44,32 +46,73 @@ def live():
     return json.dumps({"flow":flow,"time":time})
 
 # Internal query method 
-def date_filter_query(f1,f2):
-    query = f"SELECT id::text, flow_rate::text, timestamp::text FROM public.flow_meter where timestamp between '{f1.replace('T', ' ')}' and '{f2.replace('T', ' ')}' order by id desc limit 10"
-    cursor.execute(query)
-    result= cursor.fetchall()
-    # print('----------------',result)
+def date_filter_query(pick_val,selected_day =None):
+    print()
+    import datetime
+    from dateutil.relativedelta import relativedelta
+    current_time = datetime.datetime.utcnow()
+    day = current_time.day
+    start_date = datetime.datetime.utcnow() - datetime.timedelta(days=(day - 1))
+    if pick_val and pick_val == 'Monthly':
+    
+        end_date = (start_date + relativedelta(months=+1)) - datetime.timedelta(days=1)
+        start_date = str(start_date)[0:10] + ' 00:00:00'
+        end_date = str(end_date)[0:10] + ' 23:59:59'
 
+        conn = sqlite3.connect('flow_meter1.db')
+        cursor = conn.cursor()
+        query = f"SELECT distinct id,AVG(value),datetime_val FROM flow_meter_example where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%d', datetime_val);"
+        print(query)
+        cursor.execute(query)
+        result = cursor.fetchall()
+    else:
+        if selected_day:
+            choosed_date = (start_date + datetime.timedelta(days=int(selected_day) - 1))
+
+            conn = sqlite3.connect('flow_meter1.db')
+            cursor = conn.cursor()
+            start_date = str(choosed_date)[0:10] + ' 00:00:00'
+            end_date = str(choosed_date)[0:10] + ' 23:59:59'
+            query = f"SELECT distinct id,AVG(value),datetime_val FROM flow_meter_example where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%H', datetime_val);"
+            cursor.execute(query)
+            result = cursor.fetchall()
     return result
 
 # when user clicks on serach button this method will called
 @app.route('/filter', methods=['GET', 'POST'])
 def filter():
-    f1=request.args.get('f1')
-    f2=request.args.get('f2')
+    # f1=request.args.get('f1')
+    # f2=request.args.get('f2')
+    pick_val = request.args.get('pick_val')
+    selected_day = request.args.get('choose_day')
+    if pick_val == 'Monthly':
     # print('--------------------------------',f1,f2)
-    rec = date_filter_query(f1,f2)    
-    id_list =[]
-    flow_list =[]
-    time_list =[]
-    for r in rec:
-        if r:
-            id_list.append(r[0])
-            flow_list.append(float(r[1]))
-            time_list.append(str(r[2]))
+        rec = date_filter_query(pick_val)
+        id_list =[]
+        flow_list =[]
+        time_list =[]
+        for r in rec:
+            if r:
+                id_list.append(r[0])
+                flow_list.append(float(r[1]))
+                time_list.append(str(r[2]))
 
+        return json.dumps({"id_list":id_list,"flow_list":flow_list,"time_list":time_list})
 
-    return json.dumps({"id_list":id_list,"flow_list":flow_list,"time_list":time_list})
+    else:
+        if selected_day:
+            rec = date_filter_query(pick_val,selected_day)
+     
+            id_list= []
+            flow_list =[]
+            time_list =[]
+            for r in rec:
+                if r:
+                    id_list.append(r[0])
+                    flow_list.append(float(r[1]))
+                    time_list.append(str(r[2]))
+
+            return json.dumps({"id_list":id_list,"flow_list":flow_list,"time_list":time_list})
 
 
 @app.route('/pdf', methods=['GET','POST'])
