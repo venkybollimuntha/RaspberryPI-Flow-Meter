@@ -61,41 +61,38 @@ body {font-family: Arial;}
 
 
 <div class="tab">
-  <button class="tablinks" onclick="openCity(event, 'London')">Live Data</button>
-  <button class="tablinks" onclick="openCity(event, 'Paris')">Data Filter</button>
+    <button class="tablinks" onclick="openCity(event, 'London')">Live Data</button>
+    <button class="tablinks" onclick="openCity(event, 'Paris')">Data Filter</button>    
 </div>
 
 <div id="London" class="tabcontent">
- <br><br>
-Flow: <span id="flow" style="font-weight: bold;"></span>
-<br><br>
-Time: <span id="time" style="font-weight: bold;"></span>
+  {% if data.role in data.role_list %}  
+    <br><br>
+    Flow: <span id="flow" style="font-weight: bold;"></span>
+    <br><br>
+    Time: <span id="time" style="font-weight: bold;"></span>
+  {% else %}
+    Your current role: {{data.role}}, doesn't have permission to access this page. Please contact admin for further details.
+  {% endif %}
 </div>
 
 <div id="Paris" class="tabcontent">
-  <input type="text" id="hidden" style="display: none;">
-Choose value: 
-<select name = 'pick' id = 'pick_val'>
-  <option value="Monthly">Monthly</option>
-  <option value="Daily">Daily</option>
-</select>
-<div id = 'daily_div'>
-  Choose a Day:
-  <select id = 'choose_day'>
-    <option>None
-    </option>
-  </select>
-
+  {% if data.role in data.role_list %}
+    <input type="text" id="hidden" style="display: none;">
+    From  <input id = 'f1' type="datetime-local"> 
+    To <input id = "f2" type="datetime-local"> 
+    <button id="search" onclick="search_data()">Search</button> 
+    <button id="send-mail" onclick="send_data()">Send Mail</button> 
+    <button id="down-pdf" onclick="download_data()">Download</button><br><br>
+    <div id="container" style="display: none;"></div>
+  {% else %}
+    Your current role: {{data.role}}, doesn't have permission to access this page. Please contact admin for further details.
+  {% endif %}
 </div>
-
-
-
-  <button id="search" onclick="search_data()">Search</button> 
-  <button id="send-mail" onclick="send_data()">Send Mail</button> 
-  <button id="down-pdf" onclick="download_data()">Download</button><br><br>
-  <div id="container" style="display: none;"></div>
-</div>
-
+<script>
+  document.getElementById("f1").defaultValue = "04-07-2019T00:00:13.510"
+  document.getElementById("f2").defaultValue = "06-07-2019T00:00:13.510"
+</script>
 
 <script>
 function InputChartData(data){
@@ -280,41 +277,6 @@ function InputChartData(data){
 </script>
 
 <script>
-
-  $(document).ready(function() {
- document.getElementById('daily_div').style.display = "none"
-  var getDaysInMonth = function(month,year) {
-
-        return new Date(year, month+1, 0).getDate();
-        
-     };
-  
-  $("#pick_val").change(function() {
-    
-    var el = $(this) ;
-    
-    if(el.val() === "Daily" ) {
-    document.getElementById('daily_div').style.display = ""
-    var select = document.getElementById("choose_day");
-    
-
-    d = new Date()
-    for(var i = 1; i <= getDaysInMonth(d.getMonth(),d.getFullYear()); i++) {
-        var opt = i;
-        var el = document.createElement("option");
-        el.textContent = opt;
-        el.value = opt;
-        select.appendChild(el);
-    }
-    }
-      else if(el.val() === "Monthly" ) {
-        document.getElementById('daily_div').style.display = "none"
-        }
-  });
-  
-});
-
-
 function openCity(evt, cityName) {
   var i, tabcontent, tablinks;
   tabcontent = document.getElementsByClassName("tabcontent");
@@ -336,11 +298,9 @@ $(document).ready(function() {
 });
 function search_data(){
   
-    // var f1 = document.getElementById('f1').value
-    // var f2 = document.getElementById('f2').value
-    var pick_val = document.getElementById('pick_val').value
-    var choose_day = document.getElementById('choose_day').value
-  $.getJSON('/filter?pick_val='+pick_val+'&choose_day='+choose_day, function(search_data) {
+    var f1 = document.getElementById('f1').value
+    var f2 = document.getElementById('f2').value
+  $.getJSON('/filter?f1='+f1+'&f2='+f2, function(search_data) {
     console.log('----search_data----',search_data)
     InputChartData(search_data)
     document.getElementById("container").style = "display:''"
@@ -354,12 +314,10 @@ function download_data(){
     // search_data()
     var f1 = document.getElementById('f1').value
     var f2 = document.getElementById('f2').value
-    var pick_val = document.getElementById('pick_val').value
-    console.log('--------------------------------',f1,f2,pick_val)
-    $.getJSON('/pdf?get_pdf=true&f1='+f1+'&f2='+f2+'&pick_val='+pick_val, function(down_data) {
+    console.log('--------------------------------',f1,f2)
+    $.getJSON('/pdf?get_pdf=true&f1='+f1+'&f2='+f2, function(down_data) {
     console.log(down_data)
   });
-
   });
 
 }
