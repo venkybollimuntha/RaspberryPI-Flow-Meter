@@ -30,6 +30,12 @@
   <script src="static/js/exporting.js"></script>
 
 
+  <link href="static/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  <script src="static/js/bootstrap.min.js"></script>
+  <script src="static/js/jquery-1.11.1.min.js"></script>
+
+
+
   <style type="text/css">
       body{
         margin:0;
@@ -89,7 +95,8 @@
 
         /*background:linear-gradient(to right bottom, #003366, #fbfbfb);*/
         /*background:linear-gradient(to right bottom, #2851a3, #23589a);*/
-        background:linear-gradient(to right bottom, #7cb5ec, #7cb5ec);
+        /*background:linear-gradient(to right bottom, #7cb5ec, #7cb5ec);*/
+        background:linear-gradient(to right bottom, #2851a3, #23589a);
 
         box-shadow:2px 2px 18px 4px rgba(0,0,0,0.5);
         -webkit-animation:art 2s forwards;
@@ -205,77 +212,9 @@
   </style>
 </head>
 <body>
-  <div class="nav">
-    <span>
-      <!-- <img src="logo.jpeg" width="300px" style="width: 164px;margin-left: 9px;"> -->
-    </span>
-    <a href="#home">Home</a>
-    <a href="#reporting">Reporting</a>
-    <a href="#about">About</a>
-    <a href="#contact">Contact us</a>
-    {% if data.user %}
-      <span style="float: right;">
-      <a href = "{{ url_for('logout')}}">Log out</a>
-    {% else %}
-      <span style="float: right;">
-      <a href = "{{ url_for('landing_page')}}">Log in</a>
-      <a href="{{ url_for('register')}}">Sign up</a>
-    {% endif %}
-    </span>
-  </div>
-  <div class="logo">
-    <header>
-<!--       <span style="margin-left: 94%;">
-        <img src="logo.jpeg" width="700px">
-      </span> -->
-    </header>
-  </div>
-  <div class="art clearfix">
-    <img src="static/img/water_wastage.png" alt="photo" title="thi is photo">
-    <p><b>Live Sensor Reading<b></p>
-    <div id="live_data">
-      Flow: <span id = "flow"></span>
-      <br />
-      Time: <span id = "time"></span>
-    </div>
-  </div>
-
-  <div id="reporting" class="sty clearfix">
-    <span ><p style="text-align: left;margin: 3px 8px -5px 9px;">Reporting</p> </span>
-      <input type="text" id="hidden" style="display: none;">
-      <span class="txt_span">Choose value: </span>
-      <select name = 'pick' id = 'pick_val' style="color: black;font-weight: bold;">
-        <option value="None">-None-</option>
-        <option value="Monthly">Monthly</option>
-        <option value="Daily">Daily</option>
-      </select>
-      <span id = 'daily_div'>
-        <span class="txt_span"> Choose a Day:</span>
-        <select id = 'choose_day' style="color: black;font-weight: bold;">
-          <option>None
-          </option>
-        </select>
-      </span>
-        <button  style="margin-left: 20px;cursor:pointer;" id="search" onclick="search_data()">Search</button>
-        <!-- <button style="margin-left: 20px;cursor:pointer;" id="send-mail" onclick="send_data()">Send Mail</button>
-        <button style="margin-left: 20px;cursor:pointer;" id="down-pdf" onclick="download_data()">Download</button><br><br> -->
-        <div id="container" style="display: none;"></div>
-  </div>
-
-    <div id="about" class="sty clearfix">
-    <img src="https://images.pexels.com/photos/50632/pexels-photo-50632.jpeg?cs=srgb&dl=big-ben-bridge-clock-tower-50632.jpg&fm=jpg" title="this is photo" alt="photo">
-    <p>About</p>
-    <p>Founded in 1992, we have been providing automated turnkey solutions to industry since our inception.
-
-From the beginning, Industrial Automation’s mission has been to provide cost-effective automated solutions that give our customers a competitive advantage through increased productivity, lower costs, greater flexibility and better quality. We use proven, state-of-the-art technology to design, develop and build quality solutions that meet our customers’ specifications.</p>
-  </div>
-
-  <div id="contact" class="sty clearfix">
-    <img src="https://images.pexels.com/photos/50632/pexels-photo-50632.jpeg?cs=srgb&dl=big-ben-bridge-clock-tower-50632.jpg&fm=jpg" title="this is photo" alt="photo">
-    <p>Contact us</p>
-    <p></p>
-  </div>
+      {% block content %}{% endblock %}
 </body>
+
 
 <script>
 function InputChartData(data){
@@ -509,12 +448,23 @@ function openCity(evt, cityName) {
   document.getElementById(cityName).style.display = "block";
   evt.currentTarget.className += " active";
 }
+
+function demo() {
+  console.log('called')
 $(document).ready(function() {
   $.getJSON('/live', function(live) {
     document.getElementById("flow").innerText=live.flow
     document.getElementById("time").innerText=live.time
 });
 });
+}
+demo()
+setInterval("demo()",10000);
+// $(document).ready(function() {   
+// alert('yy'); 
+//     setInterval("demo()",10000); // call every 10 seconds   
+// });
+
 function search_data(){
   
     // var f1 = document.getElementById('f1').value
