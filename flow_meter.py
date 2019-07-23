@@ -1,17 +1,20 @@
-from flask import Flask, request,render_template, jsonify,json
+from flask import Flask, render_template ,jsonify,json,request,redirect,url_for
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import update
+from flask_login import UserMixin, LoginManager, current_user, login_user, logout_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_admin import Admin
+from flask_admin.contrib.sqla import ModelView
 import psycopg2
 import datetime
-import sqlite3
 from fpdf import FPDF
-import email, smtplib, ssl
-from flask_mail import Mail, Message
-from email import encoders
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 import sys
+import sqlite3
 
 app = Flask(__name__)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///flow_meter.db'
+app.secret_key = 'XP)(OIUip08u7yhg8'
 
 app.config.update(
     DEBUG=False,
@@ -21,17 +24,152 @@ app.config.update(
     MAIL_USERNAME='doubts2venky@gmail.com',
     MAIL_PASSWORD='bhagi@956'
 )
-mail = Mail(app)
+# mail = Mail(app)
+db = SQLAlchemy(app)
+db.Model.metadata.reflect(db.engine)
+login = LoginManager(app)
 
+
+# Flask-Login keeps track of the logged in user by storing its unique identifier in Flask's user session
+# Each time the logged-in user navigates to a new page, it retrieves the ID of the user from the session, and then loads that user into memory.
+@login.user_loader
+def load_user(user_id):
+    return User.query.get(user_id)
+
+class User(db.Model,UserMixin):
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key = True)
+    username = db.Column(db.String(50))
+    password = db.Column(db.String(50))
+    dob = db.Column(db.String(50))
+    email = db.Column(db.String(50))
+    role = db.Column(db.String(50))
+
+class MyModelView(ModelView):
+    def is_accessible(self):
+        user = User.query.get(current_user.get_id())
+        roles_list = ['SuperAdmin', 'Engineer', 'Manager']
+        if current_user.is_authenticated and user.role in roles_list:
+            return True # if True table is visible in Admin page
+        else:
+            return True # if False table is not visible in Admin page
+
+admin = Admin(app, name='RPI')
+admin.add_view(MyModelView(User, db.session))
 
 @app.route('/',methods=['GET','POST'])
 def landing_page():
-    return render_template('index.html')
+    data = {}
+    if current_user.is_authenticated:
+        user = User.query.get(current_user.get_id())
+        data['role'] = user.role
+        data['role_list'] = ['SuperAdmin', 'Engineer','Manager']
+        data['user'] = current_user.is_authenticated
+        return render_template('main_layout.html', data = data)
+    else:
+        return render_template('login.html', data = data)
+
+@app.route('/login',methods = ['POST', 'GET'])
+def login():
+    data = {}
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        print(username,password)
+        user = User.query.filter_by(username=username).first()
+        if user:
+            if check_password_hash(user.password, password):
+                login_user(user)
+                print(str(username)+' : successfully logged in!!')
+                return redirect(url_for('landing_page'))
+            else:
+                data['msg'] = 'Incorrect username or password'
+                return render_template('login.html',data = data)
+        else:
+            data['msg'] = 'Incorrect username or password'
+            return render_template('login.html',data = data)
+
+
+@app.route('/register',methods = ['POST', 'GET'])
+def register():
+    data= {}
+    return render_template('signup.html',data = data)
+
+
+@app.route('/signup',methods = ['POST', 'GET'])
+def signup():
+    data = {}
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        email = request.form['email']
+        dob = request.form['dob']
+        print(username,password, email)
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            print(str(username)+' : does not exist!!')
+            new_user = User(email=email, username=username, password=generate_password_hash(password, method='sha256'),dob=dob)
+            db.session.add(new_user)
+            db.session.commit()
+            print(str(username)+' : successfully created!!')
+            return redirect(url_for('landing_page'))
+        else:
+            print(str(email)+' : already exist!!')
+            data['msg'] = 'Email already exist!! Please try with new one'
+            return render_template('signup.html',data = data)
+
+
+@app.route("/logout")
+def logout():
+    logout_user()
+    return redirect(url_for('landing_page'))
+
+@app.route("/forgot")
+def forgot():
+    data= {}
+    return render_template('reset.html',data = data)
+
+@app.route("/reset", methods=['GET','POST'])
+def reset():
+    first = request.args.get('first')
+    username = request.args.get('username') if request.args.get('username') else '' 
+    dob = request.args.get('dob') if request.args.get('dob') else ''
+    second = request.args.get('second')
+    data= {}
+    if request.method == 'GET' and first == 'true':
+
+        user = User.query.filter_by(username=username,dob = dob).first()
+        print(user,dob,username)
+        if user:
+            data['is_success'] = True
+            data['username']=username
+            print('is_success')
+            return render_template('reset.html', data = data)
+        else:
+            data['is_success'] = False
+            data['msg'] = 'incorrect username/DOB, please try again.'
+            data['username']=username
+            print('not is_success')
+            return render_template('reset.html',data=data)
+
+    elif request.method == 'GET' and second == 'true':
+        password = request.args.get('password')
+        print('password-------------------',password)
+        print('username-------------------',username)
+        if username:
+            user=User.query.filter(User.username==username).first()
+            user.password = generate_password_hash(password, method='sha256')
+            db.session.commit()
+            print('updated successfully')
+            return redirect(url_for('landing_page'))
+ 
+    return redirect(url_for('landing_page'))
 
 # live endpoint 
 @app.route('/live', methods=['GET', 'POST'])
 def live():
-    conn = sqlite3.connect('flow_meter1.db')
+    conn = sqlite3.connect('flow_meter.db')
     cursor = conn.cursor()
     d = 'SELECT * FROM flow_meter_example order by id desc limit 1'
     print(d)
@@ -59,7 +197,7 @@ def date_filter_query(pick_val,selected_day =None):
         start_date = str(start_date)[0:10] + ' 00:00:00'
         end_date = str(end_date)[0:10] + ' 23:59:59'
 
-        conn = sqlite3.connect('flow_meter1.db')
+        conn = sqlite3.connect('flow_meter.db')
         cursor = conn.cursor()
         query = f"SELECT distinct id,AVG(value),datetime_val FROM flow_meter_example where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%d', datetime_val);"
         print(query)
@@ -69,7 +207,7 @@ def date_filter_query(pick_val,selected_day =None):
         if selected_day:
             choosed_date = (start_date + datetime.timedelta(days=int(selected_day) - 1))
 
-            conn = sqlite3.connect('flow_meter1.db')
+            conn = sqlite3.connect('flow_meter.db')
             cursor = conn.cursor()
             start_date = str(choosed_date)[0:10] + ' 00:00:00'
             end_date = str(choosed_date)[0:10] + ' 23:59:59'
