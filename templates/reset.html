@@ -1,73 +1,60 @@
-<!DOCTYPE html>
-<html>
+{% extends "login.html" %}
+
+{% block content %}
 <head>
-	<title>RPI: Login</title>
+	<title>Reset</title>
 </head>
-<!-- <body>
-	<form method="post" action = "{{ url_for('login') }}">
-		<div class="container">
-			<label for="uname"><b>Username</b></label>
-			<input type="text" placeholder="Enter Username" name="username" required>
 
-			<label for="psw"><b>Password</b></label>
-			<input type="password" placeholder="Enter Password" name="password" required>
 
-			<button type="submit">Login</button>
-			<a href="{{ url_for('register') }}">Go to Sign Up Page!!</a>
+	<script type="text/javascript">
+	function password_check() {
+		  var pass1 = document.getElementsByName('password')[0].value;
+		  var pass2 = document.getElementsByName('confirm-password')[0].value;
+		  if (pass1 == pass2)
+			  {
+			  	
+			  	return true;
+			  }
+		  else {
+			  	document.getElementById('patext').style="display:'';color: red;font-size: small;text-align: center;"
+			  	return false;
+			  }
+		}
+	</script>
+	<div class="login">
+  	{% if not data.is_success %}
+	    <form role="form" action = "{{ url_for('reset') }}" style="background-color: #f7ffff;opacity: 0.8;">
+		    <span>
+    	         <img src="static/img/logo.jpeg" width="300px" style="width: 92%;margin-left: 9px;margin-bottom: 26px;">
+    		</span>
+	        <input type="text" id="username" name="username" placeholder="Enter Username" required="">
+	        <input id="date" name="dob" placeholder="MM/DD/YYY" type="date" style="font-family: inherit;font-size: inherit;color: dimgray;" required="">
+	        <input name = 'first' value='true' type="hidden">
+	        <button type="submit" style="background: #191712;color: #f8f8f2;">Continue</button>
+    	<p style="color: red;font-size: small;text-align: center;">
 			{% if data.msg is not none %}
 				{{data.msg}}
 			{% endif %}
-		</div>
-	</form>
-</body>
-</html> -->
-{% extends "main_layout.html" %}
-
-{% block content %}
-
-
-<div class="container">
-    <div class="row">
-		<div class="col-md-4 col-md-offset-4" style="text-align: center;color: #e4647c;">
-    		<div class="panel panel-default" style="margin-top: 300px;">
-			  	<div class="panel-heading">
-			    	<h3 class="panel-title">RPI: Login</h3>
-			 	</div>
-			  	<div class="panel-body">
-			  	{% if not data.is_success %}
-			    	<form accept-charset="UTF-8" role="form" action = "{{ url_for('reset') }}">
-                    <fieldset>
-			    	  	<div class="form-group">
-			    		    <input class="form-control" placeholder="Enter Username" name="username" type="text" required>
-			    		</div>
-			    		<div class="form-group">
-			    			<input class="form-control" placeholder="Enter DOB" name="dob" type="date" required>
-			    			<input name = 'first' value='true' type="hidden">
-			    		</div>
-			    		<input class="btn btn-lg btn-success btn-block" type="submit" value="submit">
-			    	</fieldset>
-			      	</form>
-				{% elif data.is_success %}
-				    	<form accept-charset="UTF-8" role="form" action = "{{ url_for('reset') }}">
-	                    <fieldset>
-				    	  	<div class="form-group">
-				    		    <input class="form-control" placeholder="Enter Password" name="password" type="password" required>
-				    		</div>
-				    		<div class="form-group">
-				    			<input class="form-control" placeholder="Re-enter Password" name="confirm-password" type="password" required>
-				    			<input type="hidden" name = 'second' value='true' >
-				    			<input type="hidden" name = 'username' value={{data.username}} >
-				    		</div>
-				    		<input class="btn btn-lg btn-success btn-block" type="submit" value="submit">
-				    	</fieldset>
-				      	</form>
-				{% endif %}
-			    </div>
-			</div>
-		</div>
-		{% if data.msg is not none %}
-			{{data.msg}}
-		{% endif %}
+		</p>
+	    </form>
+	{% elif data.is_success %}
+	<form  role="form" action = "{{ url_for('reset') }}" style="background-color: #f7ffff;opacity: 0.8;" onsubmit="return password_check()">
+		    <span>
+    	         <img src="static/img/logo.jpeg" width="300px" style="width: 92%;margin-left: 9px;margin-bottom: 26px;">
+    		</span>
+	        <input placeholder="Enter Password" name="password" type="password" required>
+	        <input placeholder="Re-enter Password" name="confirm-password" type="password" required>
+			<input type="hidden" name = 'second' value='true' >
+			<input type="hidden" name = 'username' value={{data.username}} >       
+			<button type="submit" style="background: #191712;color: #f8f8f2;">Reset Password</button>
+			<p id="patext" style="display: none;">Password must be same!</p>
+    	<p style="color: red;font-size: small;text-align: center;">
+			{% if data.msg is not none %}
+				{{data.msg}}
+			{% endif %}
+		</p> 
+	    </form>
+	{% endif %}
 	</div>
-</div>
+
 {% endblock %}

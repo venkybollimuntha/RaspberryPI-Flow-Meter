@@ -1,61 +1,38 @@
-{% extends "main_layout.html" %}
+<link rel="stylesheet" type="text/css" href="/static/css/login.css">
+<!-- <link rel="stylesheet" type="text/css" href="/static/css/google-fonts.css"> -->
 
-{% block content %}
+<style type="text/css">
+	body {
+  height: 100%;
+  overflow: hidden;
+  outline: none;
+  background: url("static/img/background.jpeg");
+}
+</style>
+
 <head>
-	<title>RPI: Login</title>
+	<title>Login</title>
 </head>
-<!-- <body>
-	<form method="post" action = "{{ url_for('login') }}">
-		<div class="container">
-			<label for="uname"><b>Username</b></label>
-			<input type="text" placeholder="Enter Username" name="username" required>
+{% block content %}
+	<div class="login">
+	    <form role="form" method="post" action = "{{ url_for('login') }}" style="background-color: #f7ffff;opacity: 0.9;">
+		    <span>
+    	         <img src="static/img/logo.jpeg" width="300px" style="width: 92%;margin-left: 9px;margin-bottom: 26px;">
+    		</span>
 
-			<label for="psw"><b>Password</b></label>
-			<input type="password" placeholder="Enter Password" name="password" required>
+	        <!-- <label for="username">Username:</label> -->
+	        <input type="text" id="username" name="username" placeholder="Username" required="">
+	        <!-- <label for="password">Password:</label> -->
+	        <input type="password" id="password" name="password" placeholder="Password" required="">
+	        <button type="submit" style="background: #191712;color: #f8f8f2;">Login</button>
 
-			<button type="submit">Login</button>
-			<a href="{{ url_for('register') }}">Go to Sign Up Page!!</a>
-			{% if data.msg is not none %}
-				{{data.msg}}
-			{% endif %}
-		</div>
-	</form>
-</body>
-</html> -->
-
-
-
-<div class="container">
-    <div class="row">
-		<div class="col-md-4 col-md-offset-4" style="text-align: center;color: #e4647c;">
-    		<div class="panel panel-default" style="margin-top: 300px;">
-			  	<div class="panel-heading">
-			    	<h3 class="panel-title">RPI: Login</h3>
-			 	</div>
-			  	<div class="panel-body">
-			    	<form accept-charset="UTF-8" role="form" method="post" action = "{{ url_for('login') }}">
-                    <fieldset>
-			    	  	<div class="form-group">
-			    		    <input class="form-control" placeholder="Enter Username" name="username" type="text" required>
-			    		</div>
-			    		<div class="form-group">
-			    			<input class="form-control" placeholder="Password" name="password" type="password" required>
-			    		</div>
-			    		<input class="btn btn-lg btn-success btn-block" type="submit" value="Login">
-			    		<br><br>
-						<a href="{{ url_for('register') }}">New user? Sign Up</a>
-						<br><br>
-						<a href="{{ url_for('forgot') }}">forgot Password?</a>
-			    	</fieldset>
-			      	</form>
-			    </div>
-			</div>
-			<b>
-			{% if data.msg is not none %}
-				{{data.msg}}
-			{% endif %}
-			</b>
-		</div>
+		    <p><a href="{{ url_for('forgot') }}"  style="color: #26a69a;">Forgot password?</a></p>
+		    <p><a href="{{ url_for('register') }}" style="color: #26a69a;">Create an account</a></p>
+	    </form>
+	    <b style="color: red">
+		{% if data.msg is not none %}
+			{{data.msg}}
+		{% endif %}
+	</b>
 	</div>
-</div>
 {% endblock %}
