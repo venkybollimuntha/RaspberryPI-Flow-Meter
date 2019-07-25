@@ -59,11 +59,13 @@ class user_auth(db.Model,UserMixin):
 class MyModelView(ModelView):
     def is_accessible(self):
         user = user_auth.query.get(current_user.get_id())
-        roles_list = ['SuperAdmin', 'Engineer', 'Manager']
+        print(user.username)
+        roles_list = ['SuperAdmin', ]
+        print(user.role)
         if current_user.is_authenticated and user.role in roles_list:
             return True # if True table is visible in Admin page
         else:
-            return True # if False table is not visible in Admin page
+            return False # if False table is not visible in Admin page
 
 admin = Admin(app, name='RPI')
 admin.add_view(MyModelView(user_auth, db.session))
@@ -371,9 +373,14 @@ def download_file():
     dataToExcel.save()
     print('written data successfully')
 
-
-def v():
-    print('sdfghjsdfghjdfghj')
+# @app.route('/db')
+# def v():
+#     user=user_auth.query.filter(user_auth.username=='harish').first()
+#     print(user.role)
+#     # return 'df'
+#     user.role = 'Engineer'
+#     db.session.commit()
+    
 
 
 if __name__ == '__main__':

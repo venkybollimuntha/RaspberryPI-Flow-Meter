@@ -2,6 +2,13 @@
 
 {% block content %}
 
+  <script type="text/javascript">
+    function admin_page(){
+      console.log('method called')
+      return window.location = window.location.origin + "/admin";
+    }
+  </script>
+
   <div class="nav">
 
     <span>
@@ -13,6 +20,9 @@
     <a href="#contact">Contact us</a>
     {% if data.user %}
       <span style="float: right;">
+      {% if data.role == 'SuperAdmin' %}
+          <a href = "javascript:void(0);" onclick="admin_page();">Admin</a>
+      {% endif %}
       <a href = "{{ url_for('logout')}}">Log out</a>
     {% else %}
       <span style="float: right;">
@@ -82,3 +92,4 @@
   </div>
 </body>
   {% endblock %}
+
