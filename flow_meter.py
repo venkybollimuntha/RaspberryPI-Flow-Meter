@@ -196,46 +196,82 @@ def live():
     return json.dumps({"flow":flow,"time":time})
 
 # Internal query method 
-def date_filter_query(pick_val,selected_day =None):
-    print()
+def date_filter_query(pick_val,f1=None,f2=None):
     import datetime
     from dateutil.relativedelta import relativedelta
     current_time = datetime.datetime.utcnow()
-    day = current_time.day
-    start_date = datetime.datetime.utcnow() - datetime.timedelta(days=(day - 1))
-    if pick_val and pick_val == 'Monthly':
-    
-        end_date = (start_date + relativedelta(months=+1)) - datetime.timedelta(days=1)
-        start_date = str(start_date)[0:10] + ' 00:00:00'
-        end_date = str(end_date)[0:10] + ' 23:59:59'
+    curr_day = current_time.day
+    curr_hour = current_time.hour
+    curr_month = datetime.date.today().month 
+    curr_year = datetime.date.today().year
+    start_date = datetime.datetime.utcnow() - datetime.timedelta(days=(curr_day - 1))
+    if pick_val:
+        if pick_val == 'today':   
+            start_date = str(current_time)[0:10] + ' 00:00:00'
+            end_date = f'{str(current_time)[0:10]} {str(curr_hour - 1)}:59:59'
+            query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%h', datetime_val);"
 
+        elif pick_val == 'week':
+            start_date = datetime.datetime.utcnow() - datetime.timedelta(days=7)
+            end_date = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+            start_date = str(start_date)[0:10] + ' 00:00:00'
+            end_date = f'{str(end_date)[0:10]} {str(curr_hour - 1)}:59:59'
+            query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%d', datetime_val);"
+
+        elif pick_val == 'month':
+            start_date =  f'{curr_year}-{curr_month}-01 00:00:00'
+            end_date = f'{curr_year}-{curr_month}-{curr_day - 1} 23:59:59'
+            query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%d', datetime_val);"
+
+        elif pick_val == 'last_month':
+            import calendar
+            month = datetime.date.today().month 
+            year = datetime.date.today().year
+            if month == 1:
+                month = 12
+                year -=1 
+            else:
+                month -= 1
+            if month in list(range(1,10)):
+                month= f'{0}{month}'
+
+            last_day = calendar.monthrange(year,int(month))[1]
+            start_date = f'{year}-{month}-01 00:00:00'
+            end_date = f'{year}-{month}-{last_day} 23:59:59'
+            query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%d', datetime_val);"
+
+        elif pick_val == 'custom':
+            if f1 and f2:
+                start_date =  f'{f1} 00:00:00'
+                end_date = f'{f2} 23:59:59'
+                query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%d', datetime_val);"
+              
         conn = sqlite3.connect('flow_meter.db')
         cursor = conn.cursor()
-        query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%d', datetime_val);"
         print(query)
         cursor.execute(query)
         result = cursor.fetchall()
-    else:
-        if selected_day:
-            choosed_date = (start_date + datetime.timedelta(days=int(selected_day) - 1))
+        return result
+    # else:
+    #     if selected_day:
+    #         choosed_date = (start_date + datetime.timedelta(days=int(selected_day) - 1))
 
-            conn = sqlite3.connect('flow_meter.db')
-            cursor = conn.cursor()
-            start_date = str(choosed_date)[0:10] + ' 00:00:00'
-            end_date = str(choosed_date)[0:10] + ' 23:59:59'
-            query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%H', datetime_val);"
-            cursor.execute(query)
-            result = cursor.fetchall()
-    return result
+    #         conn = sqlite3.connect('flow_meter.db')
+    #         cursor = conn.cursor()
+    #         start_date = str(choosed_date)[0:10] + ' 00:00:00'
+    #         end_date = str(choosed_date)[0:10] + ' 23:59:59'
+    #         query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%H', datetime_val);"
+    #         cursor.execute(query)
+    #         result = cursor.fetchall()
+
 
 # when user clicks on serach button this method will called
 @app.route('/filter', methods=['GET', 'POST'])
 def filter():
-    # f1=request.args.get('f1')
-    # f2=request.args.get('f2')
+    f1=request.args.get('f1')
+    f2=request.args.get('f2')
     pick_val = request.args.get('pick_val')
-    selected_day = request.args.get('choose_day')
-    if pick_val == 'Monthly':
+    if pick_val != 'custom':
     # print('--------------------------------',f1,f2)
         rec = date_filter_query(pick_val)
         id_list =[]
@@ -250,19 +286,18 @@ def filter():
         return json.dumps({"id_list":id_list,"flow_list":flow_list,"time_list":time_list})
 
     else:
-        if selected_day:
-            rec = date_filter_query(pick_val,selected_day)
-     
-            id_list= []
-            flow_list =[]
-            time_list =[]
-            for r in rec:
-                if r:
-                    id_list.append(r[0])
-                    flow_list.append(float(r[1]))
-                    time_list.append(str(r[2]))
+        rec = date_filter_query(pick_val,f1,f2)
+ 
+        id_list= []
+        flow_list =[]
+        time_list =[]
+        for r in rec:
+            if r:
+                id_list.append(r[0])
+                flow_list.append(float(r[1]))
+                time_list.append(str(r[2]))
 
-            return json.dumps({"id_list":id_list,"flow_list":flow_list,"time_list":time_list})
+        return json.dumps({"id_list":id_list,"flow_list":flow_list,"time_list":time_list})
 
 
 def download_file():
@@ -350,10 +385,10 @@ def download_file():
         month= f'{0}{month}'
 
     last_day = calendar.monthrange(year,int(month))[1]
-    conn = sqlite3.connect('flow_meter.db')
-    cursor = conn.cursor()
     start_date = f'{year}-{month}-01 00:00:00'
     end_date = f'{year}-{month}-{last_day} 23:59:59'
+    conn = sqlite3.connect('flow_meter.db')
+    cursor = conn.cursor()
     query = f"SELECT * FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}'"
     cursor.execute(query)
     result = cursor.fetchall()

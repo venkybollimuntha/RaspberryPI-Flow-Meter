@@ -14,16 +14,7 @@
 	<title>Login</title>
 </head>
 {% block content %}
-	<div class="art clearfix" style="left: 750;margin-top: 75px;margin-left: 380px;margin-right: 700px;background-color: #f7ffff;opacity: 0.9;">
-		<img src="static/img/water_wastage.png" height="150px" width="150px" alt="photo" title="thi is photo">
-	    <p><b>Live Sensor Reading<b></p>
-	    <div id="live_data">
-	      Flow: <span id = "flow"></span>
-	      <br />
-	      Time: <span id = "time"></span>
-	    </div>
-	</div>
-	   <div class="login" style="left: 750;">
+	<div class="login">
 	    <form role="form" method="post" action = "{{ url_for('login') }}" style="background-color: #f7ffff;opacity: 0.9;">
 		    <span>
     	         <img src="static/img/logo.jpeg" width="300px" style="width: 92%;margin-left: 9px;margin-bottom: 26px;">
