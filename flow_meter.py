@@ -1,40 +1,78 @@
 from flask import Flask, render_template ,jsonify,json,request,redirect,url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import update
-from flask_login import UserMixin, LoginManager, current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from apscheduler.schedulers.background import BackgroundScheduler
+import csv
+from fpdf import FPDF 
+from flask_login import UserMixin, LoginManager, current_user, login_user, logout_user
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
+import pandas as pd  
+import xlsxwriter 
+import sqlite3
+import asyncio
+import RPi.GPIO as GPIO
+import time
+import json
+from threading import *
+import sys
 import psycopg2
 import datetime
-from fpdf import FPDF
-import sys
-import sqlite3
-import csv
-import pandas as pd
-import xlsxwriter 
 
-from apscheduler.schedulers.background import BackgroundScheduler
+FLOW_SENSOR_KROHNE = 18
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(FLOW_SENSOR_KROHNE, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-app = Flask(__name__)
 
-conn = sqlite3.connect('flow_meter.db')
+loop = asyncio.get_event_loop()
+count = 0
+
+
+conn = sqlite3.connect('samet.db')
+print('DB Opened')
 conn.execute("CREATE TABLE IF NOT EXISTS sensor_data ( id INTEGER PRIMARY KEY AUTOINCREMENT, value REAL, datetime_val TEXT )")
 conn.execute("CREATE TABLE IF NOT EXISTS user_auth ( id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password VARCHAR(50),dob TEXT,email VARCHAR(50),role VARCHAR(30),user_created_date TEXT)")
 conn.commit()
+print('Yes table exists')
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///flow_meter.db'
+async def send_req(flow_val,count):
+    conn = sqlite3.connect('samet.db')
+    conn.execute("INSERT INTO sensor_data (value,datetime_val) VALUES ('{}','{}')".format(flow_val,str(datetime.datetime.now())))
+    conn.commit()
+    print('record inserted',count)
+   
+def countPulse(channel):
+    try:
+        global count
+        count = count + 1
+        #print(count) # that is not referance to see our count. 1 more overloop
+        flow_val = count * 0.01  # we need to change this value??? it is ok
+        task_set = loop.create_task(send_req(flow_val,count))
+        #print(count)
+        
+    except (Exception, psycopg2.Error) as error:
+        print('Exception occured while inserting data into database: ' + str(error))
+
+   
+   
+GPIO.add_event_detect(FLOW_SENSOR_KROHNE, GPIO.FALLING, callback=countPulse)
+
+
+# This file is called through threading module
+def samet():
+    while True:
+        task_list = asyncio.Task.all_tasks()
+        if task_list:
+            for i in task_list:
+                loop.run_until_complete(i)
+                i.cancel()
+
+app = Flask(__name__)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///samet.db'
 app.secret_key = 'XP)(OIUip08u7yhg8'
 
-# app.config.update(
-#     DEBUG=False,
-#     MAIL_SERVER='smtp.gmail.com',
-#     MAIL_PORT=465,
-#     MAIL_USE_SSL=True,
-#     MAIL_USERNAME='doubts2venky@gmail.com',
-#     MAIL_PASSWORD='bhagi@956'
-# )
-# mail = Mail(app)
 db = SQLAlchemy(app)
 db.Model.metadata.reflect(db.engine)
 login = LoginManager(app)
@@ -181,7 +219,7 @@ def reset():
 # live endpoint 
 @app.route('/live', methods=['GET', 'POST'])
 def live():
-    conn = sqlite3.connect('flow_meter.db')
+    conn = sqlite3.connect('samet.db')
     cursor = conn.cursor()
     d = 'SELECT * FROM sensor_data order by id desc limit 1'
     print(d)
@@ -197,72 +235,85 @@ def live():
 
 # Internal query method 
 def date_filter_query(pick_val,f1=None,f2=None):
-    import datetime
-    from dateutil.relativedelta import relativedelta
-    current_time = datetime.datetime.utcnow()
-    curr_day = current_time.day
-    curr_hour = current_time.hour
-    curr_month = datetime.date.today().month 
-    curr_year = datetime.date.today().year
-    start_date = datetime.datetime.utcnow() - datetime.timedelta(days=(curr_day - 1))
-    if pick_val:
-        if pick_val == 'today':   
-            start_date = str(current_time)[0:10] + ' 00:00:00'
-            end_date = f'{str(current_time)[0:10]} {str(curr_hour - 1)}:59:59'
-            query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%h', datetime_val);"
+    try:
+        import datetime
+        from dateutil.relativedelta import relativedelta
+        current_time = datetime.datetime.utcnow()
+        curr_day = current_time.day
+        curr_hour = current_time.hour
+        curr_month = datetime.date.today().month 
+        curr_year = datetime.date.today().year
+        start_date = datetime.datetime.utcnow() - datetime.timedelta(days=(curr_day - 1))
+        if pick_val:
+            if pick_val == 'today':# not to worry lemee check it
+                start_date = str(current_time)[0:10] + ' 00:00:00'
+                end_date = '{} {}:59:59'.format(str(current_time)[0:10],str(curr_hour - 1))
+                query = "SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{}' and '{}' GROUP BY strftime('%H', datetime_val)".format(start_date,end_date)
 
-        elif pick_val == 'week':
-            start_date = datetime.datetime.utcnow() - datetime.timedelta(days=7)
-            end_date = datetime.datetime.utcnow() - datetime.timedelta(days=1)
-            start_date = str(start_date)[0:10] + ' 00:00:00'
-            end_date = f'{str(end_date)[0:10]} {str(curr_hour - 1)}:59:59'
-            query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%d', datetime_val);"
+            elif pick_val == 'week':
+                start_date = datetime.datetime.utcnow() - datetime.timedelta(days=7)
+                end_date = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+                start_date = str(start_date)[0:10] + ' 00:00:00'
+                end_date = '{} {}:59:59'.format(str(end_date)[0:10],str(curr_hour - 1))
+                query = "SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{}' and '{}' GROUP BY strftime('%d', datetime_val)".format(start_date,end_date)
 
-        elif pick_val == 'month':
-            start_date =  f'{curr_year}-{curr_month}-01 00:00:00'
-            end_date = f'{curr_year}-{curr_month}-{curr_day - 1} 23:59:59'
-            query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%d', datetime_val);"
+            elif pick_val == 'month':
 
-        elif pick_val == 'last_month':
-            import calendar
-            month = datetime.date.today().month 
-            year = datetime.date.today().year
-            if month == 1:
-                month = 12
-                year -=1 
-            else:
-                month -= 1
-            if month in list(range(1,10)):
-                month= f'{0}{month}'
+                if curr_month == 1:
+                    curr_month = 12
+                    curr_year -=1 
+                else:
+                    curr_month -= 1
+                if curr_month in list(range(1,10)):
+                    curr_month= '{}{}'.format(0,curr_month)
 
-            last_day = calendar.monthrange(year,int(month))[1]
-            start_date = f'{year}-{month}-01 00:00:00'
-            end_date = f'{year}-{month}-{last_day} 23:59:59'
-            query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%d', datetime_val);"
+                start_date =  '{}-{}-01 00:00:00'.format(curr_year,curr_month)
+                end_date = '{}-{}-{} 23:59:59'.format(curr_year,curr_month,curr_day - 1)
+                query = "SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{}' and '{}' GROUP BY strftime('%d', datetime_val)".format(start_date,end_date)
 
-        elif pick_val == 'custom':
-            if f1 and f2:
-                start_date =  f'{f1} 00:00:00'
-                end_date = f'{f2} 23:59:59'
-                query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%d', datetime_val);"
-              
-        conn = sqlite3.connect('flow_meter.db')
-        cursor = conn.cursor()
-        print(query)
-        cursor.execute(query)
-        result = cursor.fetchall()
-        return result
-    # else:
-    #     if selected_day:
-    #         choosed_date = (start_date + datetime.timedelta(days=int(selected_day) - 1))
+            elif pick_val == 'last_month':
+                import calendar
+                month = datetime.date.today().month 
+                year = datetime.date.today().year
+                if month == 1:
+                    month = 12
+                    year -=1 
+                else:
+                    month -= 1
+                if month in list(range(1,10)):
+                    month= '{}{}'.format(0,month)
 
-    #         conn = sqlite3.connect('flow_meter.db')
-    #         cursor = conn.cursor()
-    #         start_date = str(choosed_date)[0:10] + ' 00:00:00'
-    #         end_date = str(choosed_date)[0:10] + ' 23:59:59'
-    #         query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%H', datetime_val);"
-    #         cursor.execute(query)
-    #         result = cursor.fetchall()
+                last_day = calendar.monthrange(year,int(month))[1]
+                start_date = '{}-{}-01 00:00:00'.format(year,month)
+                end_date = '{}-{}-{} 23:59:59'.format(year,month,last_day)
+                query = "SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{}' and '{}' GROUP BY strftime('%d', datetime_val)".format(start_date,end_date)
+
+            elif pick_val == 'custom':
+                if f1 and f2:
+                    start_date =  '{} 00:00:00'.format(f1)
+                    end_date = '{} 23:59:59'.format(f2)
+                    query = "SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{}' and '{}' GROUP BY strftime('%d', datetime_val)".format(start_date,end_date)
+                  
+            conn = sqlite3.connect('samet.db')
+            cursor = conn.cursor()
+            print(query)
+            cursor.execute(query)
+            result = cursor.fetchall()
+            return result
+    except Exception as e:
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno))
+        # else:
+        #     if selected_day:
+        #         choosed_date = (start_date + datetime.timedelta(days=int(selected_day) - 1))
+
+        #         conn = sqlite3.connect('samet.db')
+        #         cursor = conn.cursor()
+        #         start_date = str(choosed_date)[0:10] + ' 00:00:00'
+        #         end_date = str(choosed_date)[0:10] + ' 23:59:59'
+        #         query = f"SELECT distinct id,AVG(value),datetime_val FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}' GROUP BY strftime('%H', datetime_val);"
+        #         cursor.execute(query)
+        #         result = cursor.fetchall()
+
 
 
 # when user clicks on serach button this method will called
@@ -299,9 +350,6 @@ def filter():
 
         return json.dumps({"id_list":id_list,"flow_list":flow_list,"time_list":time_list})
 
-
-def download_file():
-    print('venkybollimuntha')
 
 
 # @app.route('/pdf', methods=['GET','POST'])
@@ -382,14 +430,14 @@ def download_file():
     else:
         month -= 1
     if month in list(range(1,10)):
-        month= f'{0}{month}'
+        month= '{}{}'.format(0,month)
 
     last_day = calendar.monthrange(year,int(month))[1]
-    start_date = f'{year}-{month}-01 00:00:00'
-    end_date = f'{year}-{month}-{last_day} 23:59:59'
-    conn = sqlite3.connect('flow_meter.db')
+    start_date = '{}-{}-01 00:00:00'.format(year,month)
+    end_date = '{}-{}-{} 23:59:59'.format(year,month,last_day)
+    conn = sqlite3.connect('samet.db')
     cursor = conn.cursor()
-    query = f"SELECT * FROM sensor_data where datetime_val BETWEEN '{start_date}' and '{end_date}'"
+    query = "SELECT * FROM sensor_data where datetime_val BETWEEN '{}' and '{}'".format(start_date,end_date)
     cursor.execute(query)
     result = cursor.fetchall()
     #print(result)
@@ -403,24 +451,21 @@ def download_file():
     
     sheet_name = datetime.datetime.utcnow().strftime('%B - %Y') 
     dataExport = pd.DataFrame(dataFrame)
-    dataToExcel = pd.ExcelWriter(f'{sheet_name}.xlsx', engine='xlsxwriter')
+    dataToExcel = pd.ExcelWriter('{}.xlsx'.format(sheet_name), engine='xlsxwriter')
     dataExport.to_excel(dataToExcel, sheet_name=sheet_name, columns=['Id', 'Value', 'Date'])
     dataToExcel.save()
     print('written data successfully')
 
-# @app.route('/db')
-# def v():
-#     user=user_auth.query.filter(user_auth.username=='harish').first()
-#     print(user.role)
-#     # return 'df'
-#     user.role = 'Engineer'
-#     db.session.commit()
+
     
 
 
 if __name__ == '__main__':
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(download_file, 'cron', month='1-12', day=24, hour=18,minute=45)
-    scheduler.start()
-    app.run(debug=True)
- 
+    thread = Thread(target = samet)
+    thread.daemon = True
+    thread.start()
+    # scheduler = BackgroundScheduler()
+    # scheduler.add_job(download_file, 'cron', month='1-12', day=24, hour=18,minute=45)
+    # scheduler.start()
+    app.run(port='7866')
+
