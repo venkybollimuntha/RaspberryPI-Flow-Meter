@@ -12,7 +12,7 @@ import pandas as pd
 import xlsxwriter 
 import sqlite3
 import asyncio
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 import time
 import json
 from threading import *
@@ -20,13 +20,13 @@ import sys
 import psycopg2
 import datetime
 
-# FLOW_SENSOR_KROHNE = 18
-# GPIO.setmode(GPIO.BCM)
-# GPIO.setup(FLOW_SENSOR_KROHNE, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+FLOW_SENSOR_KROHNE = 18
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(FLOW_SENSOR_KROHNE, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 
-# loop = asyncio.get_event_loop()
-# count = 0
+loop = asyncio.get_event_loop()
+count = 0
 
 
 conn = sqlite3.connect('samet.db')
@@ -36,27 +36,27 @@ conn.execute("CREATE TABLE IF NOT EXISTS user_auth ( id INTEGER PRIMARY KEY AUTO
 conn.commit()
 print('Yes table exists')
 
-# async def send_req(flow_val,count):
-#     conn = sqlite3.connect('samet.db')
-#     conn.execute("INSERT INTO sensor_data (value,datetime_val) VALUES ('{}','{}')".format(flow_val,str(datetime.datetime.now())))
-#     conn.commit()
-#     print('record inserted',count)
+async def send_req(flow_val,count):
+    conn = sqlite3.connect('samet.db')
+    conn.execute("INSERT INTO sensor_data (value,datetime_val) VALUES ('{}','{}')".format(flow_val,str(datetime.datetime.now())))
+    conn.commit()
+    print('record inserted',count)
    
-# def countPulse(channel):
-#     try:
-#         global count
-#         count = count + 1
-#         #print(count) # that is not referance to see our count. 1 more overloop
-#         flow_val = count * 0.01  # we need to change this value??? it is ok
-#         task_set = loop.create_task(send_req(flow_val,count))
-#         #print(count)
+def countPulse(channel):
+    try:
+        global count
+        count = count + 1
+        #print(count) # that is not referance to see our count. 1 more overloop
+        flow_val = count * 0.01  # we need to change this value??? it is ok
+        task_set = loop.create_task(send_req(flow_val,count))
+        #print(count)
         
-#     except (Exception, psycopg2.Error) as error:
-#         print('Exception occured while inserting data into database: ' + str(error))
+    except (Exception, psycopg2.Error) as error:
+        print('Exception occured while inserting data into database: ' + str(error))
 
    
    
-# GPIO.add_event_detect(FLOW_SENSOR_KROHNE, GPIO.FALLING, callback=countPulse)
+GPIO.add_event_detect(FLOW_SENSOR_KROHNE, GPIO.FALLING, callback=countPulse)
 
 
 # This file is called through threading module
