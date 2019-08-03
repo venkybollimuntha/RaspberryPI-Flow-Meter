@@ -1,4 +1,4 @@
-from flask import Flask, render_template ,jsonify,json,request,redirect,url_for
+from flask import Flask, render_template ,jsonify,json,request,redirect,url_for,flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import update
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -14,6 +14,7 @@ import sqlite3
 import asyncio
 import RPi.GPIO as GPIO
 import time
+import re
 import json
 from threading import *
 import sys
@@ -105,6 +106,35 @@ class MyModelView(ModelView):
         else:
             return False # if False table is not visible in Admin page
 
+    def validate_form(self, form):
+        if request.method == 'POST' and str(request.full_path).split('?')[0] == '/admin/user_auth/delete/':
+            return True
+        elif request.method == 'POST' and str(request.full_path).split('?')[0] == '/admin/user_auth/new/':
+            if form.username.data != None and form.email.data != None:
+                user = user_auth.query.filter_by(email=form.email.data, username = form.username.data).first()
+                if not user:
+                    print(str(form.username.data)+' : does not exist!!')
+                else:
+                    flash('Email/username already exist!! Please try with new one')
+                    return False
+            if form.password.data != None:
+                form.password.data = generate_password_hash(form.password.data, method='sha256')
+            if form.email.data != None:
+                check_email_address = re.match('[^@]+@[^@]+\.[^@]+', form.email.data)
+                if check_email_address:
+                    print('Email Pattern is correct!')
+                else:
+                    flash('Please check the Email Address entered!')
+                    return False
+
+            if form.role.data != None and form.role.data not in ['SuperAdmin', 'Engineer','Manager']:
+                flash('Please enter SuperAdmin/Engineer/Manager roles!!')
+                return False            
+            if form.username.data == None or form.password.data == None or form.email.data == None or form.role.data == None or form.dob.data == None:
+                flash('Missing Username/Password/Email/Role/DOB fields!!')
+                return False         
+            return super(MyModelView, self).validate_form(form)
+
 admin = Admin(app, name='RPI')
 admin.add_view(MyModelView(user_auth, db.session))
 
@@ -119,6 +149,22 @@ def landing_page():
         return render_template('index.html', data = data)
     else:
         return render_template('login.html', data = data)
+
+
+@app.route('/create_admin',methods=['GET','POST'])
+def create_admin():
+    conn.execute("select count(*) from user_auth")
+    cur = conn.cursor()
+    num_of_user = cur.fetchone()
+    if len(num_of_user) <= 1:
+        new_user = user_auth(email='superadmin@superadmin.com', username='superadmin', password=generate_password_hash('superadmin', method='sha256'),dob='01-01-2000', role='SuperAdmin')
+        db.session.add(new_user)
+        db.session.commit()
+        print('superadmin user has been created successfully!!')
+        return 'superadmin user has been created successfully!!'
+    else:
+        print('users exists!!')
+        return 'users exists!!'
 
 @app.route('/login',methods = ['POST', 'GET'])
 def login():
@@ -137,7 +183,7 @@ def login():
                 data['msg'] = 'Incorrect username or password'
                 return render_template('login.html',data = data)
         else:
-            data['msg'] = 'Incorrect username or password'
+            data['msg'] = 'user doesnot exists!!'
             return render_template('login.html',data = data)
 
 
