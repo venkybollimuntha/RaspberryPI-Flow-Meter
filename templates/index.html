@@ -2,12 +2,6 @@
 
 {% block content %}
 
-  <script type="text/javascript">
-    function admin_page(){
-      console.log('method called')
-      return window.location = window.location.origin + "/admin";
-    }
-  </script>
 
   <style type="text/css">
     .a_tag {
@@ -17,7 +11,15 @@
     margin: left;
     margin-left: 30px;
   }
+
+  .no-close .ui-dialog-titlebar {
+    display: none;
+  }
   </style>
+
+  <!-- The below  scripts are for dialog box -->
+  <link rel="stylesheet" href="static/css/jquery-ui.css"> 
+  <script src="static/js/jquery-ui.js"></script>
 
   <div class="nav">
 
@@ -29,11 +31,13 @@
     <a href="#about">About</a>
     <a href="#contact">Contact us</a>
     {% if data.user %}
-      <span style="float: right;">
-      {% if data.role == 'SuperAdmin' %}
-          <a href = "javascript:void(0);" onclick="admin_page();">Admin</a>
-      {% endif %}
-      <a href = "{{ url_for('logout')}}">Log out</a>
+      <span style="float: right;margin-top: 9px;">
+        {% if data.role == 'SuperAdmin' %}
+            <a style="cursor:pointer;"  onclick="ConfirmDialog()">Reset Data</a>
+            <a style="cursor:pointer;" href='/admin' target='_blank'>Admin</a>
+        {% endif %}
+        <a href = "{{ url_for('logout')}}">Log out</a>
+      </span>
     {% else %}
       <span style="float: right;">
       <a href = "{{ url_for('landing_page')}}">Log in</a>
@@ -52,13 +56,19 @@
   <!-- live sensor data -->
   <div class="art clearfix">
     <img src="static/img/water_wastage.png" alt="photo" title="thi is photo">
-    <p><b>Live Sensor Reading<b></p>
+    
     <div id="live_data">
-      Flow: <span id = "flow"></span>
+      <span style = "margin-right:1px;">Instant Flow</span> : 
+      <span id = "flow"></span>&nbsp; (m³/h)
+      
       <br />
-      Time: <span id = "time"></span>
-    </div>
-  </div>
+      <span style = "margin-right:35px;">Total flow</span> :  
+      <span id = "total_flow"></span>&nbsp; (m³)
+      <br />
+      <span style = "margin-right:135px;">Time</span> : 
+      <span id = "time"></span>
+    </div>  
+  </div> 
 
    <!-- sensor data Reporting -->
   <div id="reporting" class="sty clearfix">
@@ -70,6 +80,8 @@
         <a class="a_tag" style="cursor:pointer;" onclick="search_data('month')">This month</a>&nbsp;&nbsp;&nbsp;
         <a class="a_tag" style="cursor:pointer;" onclick="search_data('last_month')">Last month</a>
         <a class="a_tag" style="cursor:pointer;" id="pick_date"  onclick="search_data('custom')">Custom date range</a>
+        <button  style="margin-left: 20px;cursor:pointer;display: none;" id="download_pdf" onclick="download_data()">Download as PDF</button>
+
         <div id="search_div" class="txt_span">
           <span id="f1_span">
             <input type="date" id="f1" style="display: none;">
@@ -104,16 +116,28 @@
 
   <!-- About div -->
   <div id="about" class="sty clearfix">
-    <img src="https://images.pexels.com/photos/50632/pexels-photo-50632.jpeg?cs=srgb&dl=big-ben-bridge-clock-tower-50632.jpg&fm=jpg" title="this is photo" alt="photo">
-    <p>About</p>
-    <p></p>
+    <img src="static/img/ses.jpeg" title="this is photo" alt="photo">
+    <p>ABOUT US</p>
+    <font face="tahoma" size="4" color="Snow"><p align="justify">SAYSAN MECHATRONICS AUTOMATION SYSTEMS <p>
+    <p align="justify">We are a company that is centered on core values of innovation uncompromising quality 
+and utmost service for needs of custommers, and to find solutions generally about  flow,control,level and 
+temperature measurements.
+In addition,gas detection systems is our another study area
+For more information, please contact with us.
+<p><p align="justify">
+<b></b></font></p>
+  
   </div>
 
   <!-- contact div -->
   <div id="contact" class="sty clearfix">
-    <img src="https://images.pexels.com/photos/50632/pexels-photo-50632.jpeg?cs=srgb&dl=big-ben-bridge-clock-tower-50632.jpg&fm=jpg" title="this is photo" alt="photo">
+    <img src="static/img/ses.jpeg" title="this is photo" alt="photo">
     <p>Contact us</p>
-    <p></p>
+    <p><font face="tahoma" size="4" color="Snow"><p align="justify">  SAYSAN MECHATRONICS AUTOMATION SYSTEMS <p>
+    <p align="justify">C.Office : Atasehir -ISTANBUL/TURKEY  - B.Office : Corlu -TEKIRDAG/TURKEY
+    <p><p align="justify">
+<b>Support :+9 0538 927 78 00 _   Mail: service@saysantr.com<b>
+</font></p>
   </div>
 </body>
 
@@ -265,8 +289,8 @@ function InputChartData(data){
               load: Highcharts.drawTable
           },
           borderWidth: 2,
-          width: 1600,
-          height: 900
+          width: 1200,
+          height: 800
       },
 
       title: {
@@ -301,6 +325,52 @@ function InputChartData(data){
 
 <script>
 
+function ConfirmDialog() {
+  $('<div></div>').appendTo('body')
+    .html('<div><h4>Really want to reset the data?</h4></div>')
+    .dialog({
+      modal: true,
+      zIndex: 10000,
+      autoOpen: true,
+      width: 500,
+      resizable: false,
+      dialogClass: "no-close",
+      buttons: {
+        "Reset Data": function() {
+            $.getJSON('/reset_data', function(data) {
+              if (data == '200'){
+              $('<div></div>').appendTo('body')
+                .html('<div><h4>Data has been resetted successfully!</h4></div>')
+                .dialog({
+                modal: true,
+                zIndex: 10000,
+                autoOpen: true,
+                width: 500,
+                resizable: false,
+                dialogClass: "no-close",
+                buttons: {
+                  Close: function() {
+                    $(this).dialog("close");
+                  }
+                }
+
+                })
+                $(this).dialog("close");
+              }
+              else{
+                alert('Try again there was an issue resetting data')
+              }
+              });
+
+            $(this).dialog("close");
+        },
+        No: function() {
+
+          $(this).dialog("close");
+        }
+      }
+    });
+};
 
 function openCity(evt, cityName) {
   var i, tabcontent, tablinks;
@@ -322,11 +392,12 @@ $(document).ready(function() {
   $.getJSON('/live', function(live) {
     document.getElementById("flow").innerText=live.flow
     document.getElementById("time").innerText=live.time
+    document.getElementById("total_flow").innerText=live.total_flow
 });
 });
 }
 demo()
-setInterval("demo()",10000);
+setInterval("demo()",3000);
 // $(document).ready(function() {   
 // alert('yy'); 
 //     setInterval("demo()",10000); // call every 10 seconds   
@@ -361,15 +432,18 @@ function call_custom(){
       }
     }
 }
-
+var picklist_val = ""
 function search_data(freq_val){
+    document.getElementById("download_pdf").style = "display:none;" 
+    picklist_val = freq_val;
 
     if (freq_val == 'custom'){
        
         document.getElementById("search_div").style = "display:'';margin-left: 31px !important;"  
         document.getElementById("search").style = "display:'';color: #00427b;cursor:pointer;"  
         document.getElementById("f1").style = "display:'';color: #00427b;cursor:pointer;"  
-        document.getElementById("f2").style = "display:'';color: #00427b;cursor:pointer;"  
+        document.getElementById("f2").style = "display:'';color: #00427b;cursor:pointer;"
+        document.getElementById('download_pdf').style = "display:''"  
     
     }
     else{
@@ -380,6 +454,8 @@ function search_data(freq_val){
         InputChartData(search_data)
         document.getElementById("container").style = "display:'';padding: 20px 20px 20px 20px;"
         document.getElementById('hidden').value = JSON.stringify(search_data)
+        document.getElementById('download_pdf').style = "display:''"
+
       });
     }
   }
@@ -387,31 +463,20 @@ function search_data(freq_val){
 
 function download_data(){
   $(document).ready(function() {
-    // search_data()
-    var f1 = document.getElementById('f1').value
-    var f2 = document.getElementById('f2').value
-    var pick_val = document.getElementById('pick_val').value
-    console.log('--------------------------------',f1,f2,pick_val)
-    $.getJSON('/pdf?get_pdf=true&f1='+f1+'&f2='+f2+'&pick_val='+pick_val, function(down_data) {
-    console.log(down_data)
-  });
 
+    if (picklist_val == "custom") {
+          var f1 = document.getElementById('f1').value
+          var f2 = document.getElementById('f2').value
+          console.log('--------------------------------',f1,f2,picklist_val)
+          $.getJSON('/pdf?f1='+f1+'&f2='+f2+'&pick_val='+picklist_val, function(down_data) {
+          console.log(down_data)});
+        }
+    else{
+      $.getJSON('/pdf?pick_val='+picklist_val, function(down_data) {
+          console.log(down_data)});
+    }
   });
-
 }
-
-
-function send_data(){
-  $(document).ready(function() {
-    var f1 = document.getElementById('f1').value
-    var f2 = document.getElementById('f2').value
-    $.getJSON('/pdf?get_pdf=true&send_mail=true&f1='+f1+'&f2='+f2, function(sending_mail) {
-    console.log(sending_mail)
-  });
-  });
-
-}
-
 </script>
 
   {% endblock %}

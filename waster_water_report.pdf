@@ -1,0 +1,23 @@
+ Volume in drive D has no label.
+ Volume Serial Number is AE87-76D6
+
+ Directory of D:\Python\Scripts\programs\Flask programs\Flow_meter\New
+
+08-08-2019  20:05    <DIR>          .
+08-08-2019  20:05    <DIR>          ..
+01-08-2019  20:54                89 denden.py
+03-08-2019  05:20    <DIR>          flow-meter-master
+08-08-2019  19:54         3,457,119 flow-meter-master (1).zip
+08-08-2019  16:39         1,739,450 flow-meter-master.zip
+08-08-2019  20:04            24,255 flow_meter.py
+29-07-2019  21:45             6,750 July - 2019.xlsx
+29-07-2019  21:45               367 requirements.txt
+03-08-2019  22:41         5,009,408 samet.db
+03-08-2019  17:16    <DIR>          static
+03-08-2019  17:16    <DIR>          templates
+02-08-2019  13:20             1,795 try_analog_input.py
+08-08-2019  20:05                 0 waster_water_report.pdf
+01-08-2019  20:36             2,938 yup.py
+03-08-2019  22:11    <DIR>          __pycache__
+              10 File(s)     10,242,171 bytes
+               6 Dir(s)  120,754,790,400 bytes free

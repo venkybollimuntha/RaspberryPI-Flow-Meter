@@ -14,6 +14,11 @@
 	<title>Login</title>
 </head>
 {% block content %}
+	<script src="static/js/jquery.js"></script>
+	  <!-- live sensor data -->
+	
+	<!-- <img src="static/img/water_wastage.png" alt="photo" title="thi is photo"> -->  
+
 	<div class="login">
 	    <form role="form" method="post" action = "{{ url_for('login') }}" style="background-color: #f7ffff;opacity: 0.9;">
 		    <span>
@@ -27,13 +32,40 @@
 	        <button type="submit" style="background: #191712;color: #f8f8f2;">Login</button>
 
 		    <p><a href="{{ url_for('forgot') }}"  style="color: #26a69a;">Forgot password?</a></p>
-		    {% if data['is_superadmin'] == %}
-		    <p><a href="{{ url_for('register') }}" style="color: #26a69a;">Create an account</a></p>
+
 	    </form>
 	    <b style="color: red">
-		{% if data.msg is not none %}
-			{{data.msg}}
-		{% endif %}
-	</b>
+			{% if data.msg is not none %}
+				{{data.msg}}
+			{% endif %}
+		</b>
+
+			<div id="live_data" style="padding-left: 8px;height: 78px;font-size: 14px;width: auto;background: white;font-weight: 800;border-style: ridge;">
+			  <span style = "margin-right:10px;">Instant Flow</span> : 
+			  <span id = "flow"></span>&nbsp; (m³/h)
+			  
+			  <br />
+			  <span style = "margin-right:30px;">Total flow</span> :  
+			  <span id = "total_flow"></span>&nbsp; (m³)
+			  <br />
+			  <span style = "margin-right:68px;">Time</span> : 
+			  <span id = "time"></span>
+			</div>
 	</div>
+
+<script type="text/javascript">
+function demo() {
+  console.log('called from logged in')
+	$(document).ready(function() {
+  		$.getJSON('/live', function(live) {
+		    document.getElementById("flow").innerText=live.flow
+		    document.getElementById("time").innerText=live.time
+		    document.getElementById("total_flow").innerText=live.total_flow
+		});
+	});
+}
+
+demo()
+setInterval("demo()",3000);
+</script>
 {% endblock %}
