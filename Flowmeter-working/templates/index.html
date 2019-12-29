@@ -1,0 +1,635 @@
+{% extends "main_layout.html" %}
+
+{% block content %}
+
+
+  <style type="text/css">
+    .a_tag {
+    color: #00427b;
+    text-decoration: none;
+    font-size: inherit;
+    margin: left;
+    margin-left: 30px;
+  }
+
+  .no-close .ui-dialog-titlebar {
+    display: none;
+  }
+  </style>
+
+  <!-- The below  scripts are for dialog box -->
+  <link rel="stylesheet" href="static/css/jquery-ui.css"> 
+  <script src="static/js/jquery-ui.js"></script>
+
+  <div class="nav">
+
+    <span>
+      <img src="static/img/logo.jpeg" width="300px" style="width: 164px;margin-left: 9px;">
+    </span>
+    <a href="#home">Home</a>
+    <a href="#reporting">Reporting</a>
+    <a href="#about">About</a>
+    <a href="#contact">Contact us</a>
+    {% if data.user %}
+      <span style="float: right;margin-top: 9px;">
+        {% if data.role == 'SuperAdmin' %}
+            <a style="cursor:pointer;"  onclick="ConfirmDialog()">Reset Data</a>
+            <a style="cursor:pointer;" href='/admin/user_auth' target='_blank'>Admin</a>
+        {% endif %}
+        <a href = "{{ url_for('logout')}}">Log out</a>
+      </span>
+    {% else %}
+      <span style="float: right;">
+      <a href = "{{ url_for('landing_page')}}">Log in</a>
+      <a href="{{ url_for('register')}}">Sign up</a>
+    {% endif %}
+    </span>
+  </div>
+<!--   <div class="logo">
+    <header>
+      <span style="margin-left: 94%;">
+        <img src="logo.jpeg" width="700px">
+      </span>
+    </header>
+  </div> -->
+
+  <!-- live sensor data -->
+  <div class="art clearfix">
+    <img src="static/img/water_wastage.png" alt="photo" title="thi is photo">
+    
+    <div id="live_data">
+      <span style = "margin-right:1px;">Instant Flow</span> : 
+      <span id = "flow"></span>&nbsp; (m³/h)
+      
+      <br />
+      <span style = "margin-right:35px;">Total flow</span> :  
+      <span id = "total_flow"></span>&nbsp; (m³)
+      <br />
+      <span style = "margin-right:135px;">Time</span> : 
+      <span id = "time"></span>
+
+    </div>  
+  </div> 
+
+   <!-- sensor data Reporting -->
+  <div id="reporting" class="sty clearfix">
+    <span ><p style="text-align: left;margin: 3px 8px -5px 9px;">Reporting</p> </span>
+
+      <div style="margin-top: 40px;">
+        <a class="a_tag" style="cursor:pointer;" onclick="search_data('today')">Today</a>&nbsp;&nbsp;&nbsp;
+       <!-- <a class="a_tag" style="cursor:pointer;" onclick="search_data('week')">Last 7 days</a>&nbsp;&nbsp;&nbsp;
+        <a class="a_tag" style="cursor:pointer;" onclick="search_data('month')">This month</a>&nbsp;&nbsp;&nbsp;
+        <a class="a_tag" style="cursor:pointer;" onclick="search_data('last_month')">Last month</a> -->
+        <a class="a_tag" style="cursor:pointer;" id="pick_date"  onclick="search_data('custom')">Custom date range</a>
+        <button  style="margin-left: 20px;cursor:pointer;display: none;" id="download_pdf" onclick="download_data()">Save as PDF</button>
+        <button  style="margin-left: 20px;cursor:pointer;display: none;" id="send_mail" onclick="send_email()">Send as Email</button>
+
+        <div id="search_div" class="txt_span">
+          <span id="f1_span">
+            <input type="date" id="f1" style="display: none;">
+          </span>&nbsp;&nbsp;&nbsp;
+          <span id="f2_span">
+            <input type="date" id="f2" style="display: none;">
+          </span>&nbsp;&nbsp;&nbsp;
+          <span id="search_btn_span">
+            <button  style="margin-left: 20px;cursor:pointer;display: none;" id="search" onclick="call_custom()">Search</button>
+          </span>
+        </div>
+      </div>
+      <input type="text" id="hidden" style="display: none;">
+<!--       <span class="txt_span">Choose value: </span>
+      <select name = 'pick' id = 'pick_val' style="color: black;font-weight: bold;">
+        <option value="None">-None-</option>
+        <option value="Monthly">Monthly</option>
+        <option value="Daily">Daily</option>
+      </select>
+
+        <button  style="margin-left: 20px;cursor:pointer;" id="search" onclick="search_data()">Search</button> -->
+        <!-- <button style="margin-left: 20px;cursor:pointer;" id="send-mail" onclick="send_data()">Send Mail</button>
+        <button style="margin-left: 20px;cursor:pointer;" id="down-pdf" onclick="download_data()">Download</button><br><br> -->
+        <div id="container" style="display: none;"></div>
+
+        <div>
+          
+        </div>
+  </div>
+
+
+
+  <!-- About div -->
+  <div id="about" class="sty clearfix">
+    <img src="static/img/ses.jpeg" title="this is photo" alt="photo">
+    <p>ABOUT US</p>
+    <font face="tahoma" size="4" color="Snow"><p align="justify">SAYSAN MECHATRONICS AUTOMATION SYSTEMS <p>
+    <p align="justify">We are a company that is centered on core values of innovation uncompromising quality 
+and utmost service for needs of custommers, and to find solutions generally about  flow,control,level and 
+temperature measurements.
+In addition,gas detection systems is our another study area
+For more information, please contact with us.
+<p><p align="justify">
+<b></b></font></p>
+  
+  </div>
+
+  <!-- contact div -->
+  <div id="contact" class="sty clearfix">
+    <img src="static/img/ses.jpeg" title="this is photo" alt="photo">
+    <p>ABOUT US</p>
+    <font face="tahoma" size="4" color="Snow"><p align="justify">C.Office : Atasehir -ISTANBUL/TURKEY - B.Office : Corlu -TEKIRDAG/TURKEY <p>
+    <p align="justify">
+Support :+9 0538 927 78 00  E-Mail: service@saysantr.com
+<p><p align="justify">
+<b></b></font></p>
+  
+</body>
+
+<script>
+function InputChartData(data){
+/**
+ * Create the data table
+ */
+  // Highcharts.drawTable = function () {
+
+  //     // user options
+  //     var tableTop = 650,
+  //         colWidth = 200,
+  //         tableLeft = 20,
+  //         rowHeight = 20,
+  //         cellPadding = 2.5;
+
+  //     // internal variables
+  //     var chart = this,
+  //         series = chart.series,
+  //         renderer = chart.renderer,
+  //         cellLeft = tableLeft;
+
+  //     // draw category labels
+  //     chart.xAxis[0].categories.forEach(function (name, i) {
+  //         renderer.text(
+  //             name,
+  //             cellLeft + cellPadding,
+  //             tableTop + (i + 2) * rowHeight - cellPadding
+  //         )
+  //             .css({
+  //                 fontWeight: 'bold'
+  //             })
+  //             .add();
+  //     });
+
+  //     series.forEach(function (serie, i) {
+  //         cellLeft += colWidth;
+
+  //         // Apply the cell text
+  //         renderer.text(
+  //             serie.name,
+  //             cellLeft - cellPadding + colWidth,
+  //             tableTop + rowHeight - cellPadding
+  //         )
+  //             .attr({
+  //                 align: 'right'
+  //             })
+  //             .css({
+  //                 fontWeight: 'bold'
+  //             })
+  //             .add();
+
+  //         serie.data.forEach(function (point, row) {
+
+  //             // Apply the cell text
+  //             renderer.text(
+  //                 Highcharts.numberFormat(point.y),
+  //                 cellLeft + colWidth - cellPadding,
+  //                 tableTop + (row + 2) * rowHeight - cellPadding
+  //             )
+  //                 .attr({
+  //                     align: 'right'
+  //                 })
+  //                 .add();
+
+  //             // horizontal lines
+  //             if (row === 0) {
+  //                 Highcharts.tableLine( // top
+  //                     renderer,
+  //                     tableLeft,
+  //                     tableTop + cellPadding,
+  //                     cellLeft + colWidth,
+  //                     tableTop + cellPadding
+  //                 );
+  //                 Highcharts.tableLine( // bottom
+  //                     renderer,
+  //                     tableLeft,
+  //                     tableTop + (serie.data.length + 1) * rowHeight + cellPadding,
+  //                     cellLeft + colWidth,
+  //                     tableTop + (serie.data.length + 1) * rowHeight + cellPadding
+  //                 );
+  //             }
+  //             // horizontal line
+  //             Highcharts.tableLine(
+  //                 renderer,
+  //                 tableLeft,
+  //                 tableTop + row * rowHeight + rowHeight + cellPadding,
+  //                 cellLeft + colWidth,
+  //                 tableTop + row * rowHeight + rowHeight + cellPadding
+  //             );
+
+  //         });
+
+  //         // vertical lines
+  //         if (i === 0) { // left table border
+  //             Highcharts.tableLine(
+  //                 renderer,
+  //                 tableLeft,
+  //                 tableTop + cellPadding,
+  //                 tableLeft,
+  //                 tableTop + (serie.data.length + 1) * rowHeight + cellPadding
+  //             );
+  //         }
+
+  //         Highcharts.tableLine(
+  //             renderer,
+  //             cellLeft,
+  //             tableTop + cellPadding,
+  //             cellLeft,
+  //             tableTop + (serie.data.length + 1) * rowHeight + cellPadding
+  //         );
+
+  //         if (i === series.length - 1) { // right table border
+
+  //             Highcharts.tableLine(
+  //                 renderer,
+  //                 cellLeft + colWidth,
+  //                 tableTop + cellPadding,
+  //                 cellLeft + colWidth,
+  //                 tableTop + (serie.data.length + 1) * rowHeight + cellPadding
+  //             );
+  //         }
+
+  //     });
+
+
+  // };
+
+  /**
+   * Draw a single line in the table
+   */
+  // Highcharts.tableLine = function (renderer, x1, y1, x2, y2) {
+  //     renderer.path(['M', x1, y1, 'L', x2, y2])
+  //         .attr({
+  //             stroke: 'silver',
+  //             'stroke-width': 1
+  //         })
+  //         .add();
+  // };
+
+  /**
+   * Create the chart
+   */
+  window.chart = Highcharts.chart('container', {
+
+      chart: {
+          // events: {
+          //     load: Highcharts.drawTable
+          // },
+          borderWidth: 2,
+          width: 1200,
+          height: 800,
+          type:'column'
+      },
+
+      title: {
+          text: 'Flow Meter Readings'
+      },
+
+      xAxis: {
+        title: {
+              text: 'Time'
+          },
+          categories: data.time_list
+      },
+
+      yAxis: {
+          title: {
+              text: 'Flow Rate (m³)'
+          }
+      },
+
+      legend: {
+          y: -300
+      },
+
+      series: [{
+          name: 'Flow Rate',
+          data: data.flow_list
+      }]
+  });
+}
+//InputChartData()
+</script>
+
+<script>
+
+function ConfirmDialog() {
+  $('<div></div>').appendTo('body')
+    .html('<div><h4>Really want to reset the data?</h4></div>')
+    .dialog({
+      modal: true,
+      zIndex: 10000,
+      autoOpen: true,
+      width: 500,
+      resizable: false,
+      dialogClass: "no-close",
+      buttons: {
+        "Reset Data": function() {
+            $.getJSON('/reset_data', function(data) {
+              if (data == '200'){
+              $('<div></div>').appendTo('body')
+                .html('<div><h4>Data has been resetted successfully!</h4></div>')
+                .dialog({
+                modal: true,
+                zIndex: 10000,
+                autoOpen: true,
+                width: 500,
+                resizable: false,
+                dialogClass: "no-close",
+                buttons: {
+                  Close: function() {
+                    $(this).dialog("close");
+                  }
+                }
+
+                })
+                $(this).dialog("close");
+              }
+              else{
+                alert('Try again there was an issue resetting data')
+              }
+              });
+
+            $(this).dialog("close");
+        },
+        No: function() {
+
+          $(this).dialog("close");
+        }
+      }
+    });
+};
+
+function openCity(evt, cityName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(cityName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+
+function demo() {
+  console.log('called')
+$(document).ready(function() {
+  $.getJSON('/live', function(live) {
+    document.getElementById("flow").innerText=live.flow
+    document.getElementById("time").innerText=live.time
+    document.getElementById("total_flow").innerText=live.total_flow
+});
+});
+}
+demo()
+setInterval("demo()",3000);
+// $(document).ready(function() {   
+// alert('yy'); 
+//     setInterval("demo()",10000); // call every 10 seconds   
+// });
+
+function call_custom(){
+    var f1 = document.getElementById('f1').value
+    var f2 = document.getElementById('f2').value
+    params = 'pick_val=custom'+'&f1='+f1+'&f2='+f2
+    console.log(f1,f2)
+
+    var oneDay = 24*60*60*1000;
+    var fromDate = new Date(f1);
+    var toDate = new Date(f2);
+
+    var diffDays = Math.round(Math.abs((toDate.getTime() - fromDate.getTime())/(oneDay)));
+    if (f1 != "" && f2 != ""){
+    if (toDate < fromDate){
+      alert('To-date cannot be greater than From-date');
+    }
+    else{
+      if (diffDays > 45) {
+        alert('You cannot query more than 45 days data!');
+      }
+      else{
+          $.getJSON('/filter?'+params, function(search_data) {
+          console.log('----search_data----',search_data)
+          InputChartData(search_data)
+          document.getElementById("container").style = "display:'';padding: 20px 20px 20px 20px;"
+          document.getElementById('hidden').value = JSON.stringify(search_data)
+          document.getElementById('download_pdf').style = "display:'';margin-left: 101px;"  
+          document.getElementById('send_mail').style = "display:'';margin-left: 20px;"  
+        });
+      }
+    }
+  }
+  else{
+    alert('Please select the date range!')
+  }
+}
+var picklist_val = ""
+function search_data(freq_val){
+    document.getElementById("download_pdf").style = "display:none;" 
+    document.getElementById('send_mail').style = "display:none;"
+    picklist_val = freq_val;
+
+    if (freq_val == 'custom'){
+       
+        document.getElementById("search_div").style = "display:'';margin-left: 31px !important;"  
+        document.getElementById("search").style = "display:'';color: #00427b;cursor:pointer;"  
+        document.getElementById("f1").style = "display:'';color: #00427b;cursor:pointer;"  
+        document.getElementById("f2").style = "display:'';color: #00427b;cursor:pointer;"
+        // document.getElementById('download_pdf').style = "display:'';margin-left: 101px;"  
+    
+    }
+    else{
+      document.getElementById("search_div").style = "display:none;"  
+      params = 'pick_val='+freq_val
+      $.getJSON('/filter?'+params, function(search_data) {
+        console.log('----search_data----',search_data)
+        InputChartData(search_data)
+        document.getElementById("container").style = "display:'';padding: 20px 20px 20px 20px;"
+        document.getElementById('hidden').value = JSON.stringify(search_data)
+        document.getElementById('download_pdf').style = "display:'';margin-left: 101px;"
+        document.getElementById('send_mail').style = "display:'';margin-left: 20px;"
+
+      });
+    }
+  }
+
+
+function download_data(){
+  $(document).ready(function() {
+
+    if (picklist_val == "custom") {
+          var f1 = document.getElementById('f1').value
+          var f2 = document.getElementById('f2').value
+          console.log('---------------download_data-----------------',f1,f2,picklist_val)
+          $.getJSON('/pdf?f1='+f1+'&f2='+f2+'&pick_val='+picklist_val, function(down_data) {
+          console.log(down_data,typeof(down_data))
+          if (down_data === 200){
+            window.location.href = location.href+'pdf_save';
+          } else if (down_data === 400) {
+            alert('There is no data on the graph to download');
+          }
+          else{
+            alert('There was an issue downloading the file, please try again later.')
+          }         
+          });
+        }
+    else{
+      $.getJSON('/pdf?pick_val='+picklist_val, function(down_data) {
+          console.log('---------------download_data-----------------',picklist_val)
+          console.log(down_data,typeof(down_data))
+          if (down_data === 200){
+            window.location.href = location.href+'pdf_save';
+          } else if (down_data === 400) {
+            alert('There is no data on the graph to download');
+          }
+          else{
+            alert('There was an issue downloading the file, please try again later.')
+          }         
+          });
+    }
+  });
+}
+
+function send_email(){
+  $(document).ready(function() {
+    if (picklist_val == "custom") {
+          var f1 = document.getElementById('f1').value
+          var f2 = document.getElementById('f2').value
+          console.log('--------------------------------',f1,f2,picklist_val)
+          $.getJSON('/pdf?f1='+f1+'&f2='+f2+'&pick_val='+picklist_val, function(down_data) {
+            console.log(down_data,typeof(down_data))
+            if (down_data === 200){
+                $.getJSON('/send_email?f1='+f1+'&f2='+f2+'&pick_val='+picklist_val, function(send_data) {
+                    if (send_data === 400){
+                      console.log('No internet !!!!!!!!!')
+                    $('<div></div>').appendTo('body')
+                      .html('<div><h4>Please connect to the internet to send an email !</h4></div>')
+                      .dialog({
+                      modal: true,
+                      zIndex: 10000,
+                      autoOpen: true,
+                      width: 500,
+                      resizable: false,
+                      dialogClass: "no-close",
+                      buttons: {
+                        Close: function() {
+                          $(this).dialog("close");
+                        }
+                      }
+
+                      })
+                      $(this).dialog("close");
+                    }
+                    else if(send_data === 200){
+                      console.log('mail sent')
+                      $('<div></div>').appendTo('body')
+                      .html('<div><h4>Mail has been sent to the user successfully!</h4></div>')
+                      .dialog({
+                      modal: true,
+                      zIndex: 10000,
+                      autoOpen: true,
+                      width: 500,
+                      resizable: false,
+                      dialogClass: "no-close",
+                      buttons: {
+                        Close: function() {
+                          $(this).dialog("close");
+                        }
+                      }
+
+                      })
+                      $(this).dialog("close");
+
+                    }
+                    else{
+                      alert('There is an issue try again later!')
+                    }
+                });
+              }
+              else{
+                console.log('issue while downloading pdf !!!')
+              }
+            });
+          }
+
+    else{
+        $.getJSON('/pdf?pick_val='+picklist_val, function(down_data) {
+          console.log(down_data)
+          if (down_data === 200){
+              $.getJSON('/send_email?pick_val='+picklist_val, function(send_data) {
+              console.log(this)
+              if (send_data === 400){
+                console.log('No internet')
+              $('<div></div>').appendTo('body')
+                .html('<div><h4>Please connect to the internet to send an email !</h4></div>')
+                .dialog({
+                modal: true,
+                zIndex: 10000,
+                autoOpen: true,
+                width: 500,
+                resizable: false,
+                dialogClass: "no-close",
+                buttons: {
+                  Close: function() {
+                    $(this).dialog("close");
+                  }
+                }
+
+                })
+                $(this).dialog("close");
+              }
+              else if(send_data === 200){
+                console.log('mail sent')
+                $('<div></div>').appendTo('body')
+                .html('<div><h4>Mail has been sent to the user successfully!</h4></div>')
+                .dialog({
+                modal: true,
+                zIndex: 10000,
+                autoOpen: true,
+                width: 500,
+                resizable: false,
+                dialogClass: "no-close",
+                buttons: {
+                  Close: function() {
+                    $(this).dialog("close");
+                  }
+                }
+
+                })
+                $(this).dialog("close");
+
+              }
+              else{
+                alert('There is an issue try again later!')
+              }
+            });
+          }
+          else{
+              console.log('issue while downloading pdf !!!')
+            }
+        })
+      }
+  });
+}
+</script>
+
+  {% endblock %}
+

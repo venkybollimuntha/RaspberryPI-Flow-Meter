@@ -1,0 +1,30 @@
+{% extends "login.html" %}
+
+{% block content %}
+<head>
+	<title>RPI: Signup</title>
+</head>
+
+	<div class="login">
+	    <form role="form" method="post" action = "{{ url_for('signup') }}" style="background-color: #f7ffff;opacity: 0.8;">
+		    <span>
+    	         <img src="static/img/logo.jpeg" width="300px" style="width: 92%;margin-left: 9px;margin-bottom: 26px;">
+    		</span>
+
+	        <!-- <label for="username">Username:</label> -->
+	        <input placeholder="Enter Username" name="username" type="text" required="">
+	        <input placeholder="Enter Email" name="email" type="text" required="">
+	        <!-- <label for="password">Password:</label> -->
+	        <input placeholder="Password" type="password" id="password" name="password" placeholder="Password" required="">
+	        <input id="date" name="dob" placeholder="MM/DD/YYY" type="date" style="font-family: inherit;font-size: inherit;color: dimgray;" required="">
+	        
+	        <button type="submit" style="background: #191712;color: #f8f8f2;">Signup</button>
+	        	
+	    </form>
+	    <b style="color: red">
+		{% if data.msg is not none %}
+			{{data.msg}}
+		{% endif %}
+		</b>
+	</div>
+{% endblock %}

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Website</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"> -->
+  <!-- <link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.5.0/css/all.css'> -->
+  <!-- <link href="https://fonts.googleapis.com/css?family=Black+Han+Sans|Raleway" rel="stylesheet">   -->
+
+  <link href="static/css/font.css" rel="stylesheet">
+  <link href="static/css/all.css" rel="stylesheet">
+  <link href="static/css/font-family.css" rel="stylesheet">  
+
+
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script> -->
+  <!-- <script src="https://code.highcharts.com/highcharts.src.js"></script> -->
+  <!-- <script src="https://code.highcharts.com/highcharts.js"></script> -->
+  <!-- <script src="https://code.highcharts.com/modules/exporting.js"></script> -->
+
+
+  <script src="static/js/jquery.js"></script>
+  <script src="static/js/highcharts-src.js"></script>
+  <script src="static/js/highcharts.js"></script>
+  <script src="static/js/exporting.js"></script>
+
+
+  <link href="static/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  <script src="static/js/bootstrap.min.js"></script>
+  <script src="static/js/jquery-1.11.1.min.js"></script>
+
+
+
+  <style type="text/css">
+      body{
+        margin:0;
+        padding:0;
+        font-family:"Raleway", sans-serif;
+        font-size:14pt;
+        background-position:center;
+        background-attachment:fixed;
+        background-repeat:no-repeat;
+        background-size:100%;
+      }
+      .highcharts-credits{
+        display: none;
+      }
+      .nav{
+        position:fixed;
+        display:block;
+        background:#f37306;
+        width:100%;
+        top:0;
+        left:0;
+        right:0;
+        padding: 6px 0;
+        box-shadow:0 4px 18px 4px rgba(0,0,0,0.5);
+        z-index:100;  
+      }
+      .nav a{
+        text-decoration:none;
+        color:#fff;
+        text-align:left;
+        padding:5px 10px;
+        margin:10px;
+      }
+
+      .logo{
+        margin-top:100px;
+        margin-left:80px;
+        font-family:"Black Han Sans", sans-serif;
+        font-size:30pt;
+        width:20%;
+        text-align:center;
+        padding:0;
+        opacity:0;
+        -webkit-animation:logo 2s forwards;
+        color:#003366;
+      }
+      @-webkit-keyframes logo{
+        0%{top:0;}
+        100%{opacity:1;}
+      }
+      .art{
+        transform:translateX(-500px);
+        margin-top:105px;
+        width:30%;
+        /*background:linear-gradient(to right bottom, #003366, #00995c);*/
+        /*background:linear-gradient(to right bottom, #334956, #7f86b9);*/
+
+        /*background:linear-gradient(to right bottom, #003366, #fbfbfb);*/
+        /*background:linear-gradient(to right bottom, #2851a3, #23589a);*/
+        /*background:linear-gradient(to right bottom, #7cb5ec, #7cb5ec);*/
+        background:linear-gradient(to right bottom, #2851a3, #23589a);
+
+        box-shadow:2px 2px 18px 4px rgba(0,0,0,0.5);
+        -webkit-animation:art 2s forwards;
+        -webkit-animation-delay:2s;
+        opacity:0;
+        padding:10px;
+      }
+      .art img{
+        float:left;
+        border:none;
+        border-radius:16px;
+        height:150px;
+        width:150px;
+      }
+      .art p{
+        padding:10px;
+        margin:10px 0 0 150px;
+        text-align:center;
+        color:#fff;
+      }
+      .clearfix{
+        content:" ";
+        display:table;
+        clear:both;
+        width:50%; /* you can adjust this value to get perfect output*/
+      }
+      @-webkit-keyframes art{
+        0%{transform:translateX(0);}
+        100%{transform:translateX(100px); opacity:1;}
+      }
+      .sty{
+        width:90%;
+        margin:auto;
+        margin-top:50px;
+        margin-bottom:50px;
+        /*background:linear-gradient(to right bottom, #003366, #00995c);        */
+        /*background:linear-gradient(to right bottom, #003366, #fbfbfb);*/
+        /*background:linear-gradient(to right bottom, #2851a3, #23589a);*/
+        background:linear-gradient(to right bottom, #7cb5ec, #7cb5ec);
+        box-shadow:2px 2px 18px 4px rgba(0,0,0,0.5);
+      }
+      .sty img{
+        float:left;
+        height:500px;
+        width:500px;
+        padding:0;
+        margin-right:10px;
+      }
+      .sty p{
+        padding:10px;
+        margin:10px 0 0 500px;
+        height:auto;
+        text-align:center;
+        color:#fff;
+      }
+      .box-message{
+        margin:10px 0 0 500px;
+        text-align:center;
+      }
+      input[type=text]{
+        border:none;
+        border-bottom:1px solid black;
+        padding:10px 150px 10px 5px;
+        background:transparent;
+        margin:10px 0;
+        font-size:18pt;
+        color:#fff;
+      }
+      .mrg{
+        margin-top:80px;
+      }
+      .txt{
+        border:none;
+        border-bottom:1px solid black;
+        padding:10px 120px 10px 5px;
+        background:transparent;
+        margin:10px 0;
+        font-size:18pt;
+        font-family:"Raleway", sans-serif;
+        color:#fff;
+      }
+      input,button,select{
+        color:#000;
+        border:1px solid black;
+        border-radius:5px;
+        padding:10px 50px;
+        margin:50px 0;
+        background:transparent;
+        box-shadow:-5px 8px 18px 4px rgba(0,0,0,0.5);
+        -webkit-transition:box-shadow, .5s;
+        font-family:"Raleway", sans-serif;
+        font-size:10pt;
+        color:#fff;
+      }
+      input,button,select:hover{
+        box-shadow:none;
+      }
+
+      #live_data {
+        font-size: 30px; /* this is for font size */
+        margin-left: 20%;
+        color: aliceblue;
+        font-family: monospace;
+      }
+
+      .txt_span {
+        margin-left: 20px;
+        margin-right: 20px;
+        color: white;
+        font-size: 13px;
+        font-family: inherit;
+        font-weight: initial;
+      }
+  </style>
+</head>
+<body>
+      {% block content %}{% endblock %}
+</body>
+
+</html>

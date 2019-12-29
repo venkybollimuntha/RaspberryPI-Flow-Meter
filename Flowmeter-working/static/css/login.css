@@ -1,0 +1,101 @@
+
+/*@import url("/google-fonts.css");*/
+
+
+body {
+  height: 100%;
+  overflow: hidden;
+  outline: none;
+  background: url("img/background.jpeg");
+}
+
+body {
+  font-family: "Open Sans", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5em;
+  background-color: $bg-2;
+  color: $text;
+}
+
+.login {
+  position: absolute;
+  margin: 0 auto;
+  top: 50%;
+  left: 50%;
+  width: 320px;
+  /*height: 300px;*/
+  transform: translate(-50%, -50%);
+}
+
+.login h1 {
+  position: relative;
+  margin-top: 20px;
+  margin-bottom: 40px;
+  color: $text;
+  text-align: center;
+  & span {
+    color: $green;
+  }
+}
+
+.login form {
+  height: 100%;
+  padding: 20px;
+  padding-bottom: 40px;
+  background-color: $bg-1;
+  border-top: 4px solid $bg-3;
+  border-bottom: 4px solid $bg-3;
+}
+
+.login form input,
+.login form button {
+  width: 100%;
+  margin-bottom: 10px;
+  border: none;
+  outline: none;
+  padding: 10px;
+  background-color: $bg-3;
+  font-size: 16px;
+  line-height: 1.5em;
+  border-radius: 4px;
+  transition: all .5s ease;
+  &::placeholder {
+    color: $placeholder;
+  }
+  &:focus {
+    background-color: $bg-4;
+  }
+}
+
+.login form button[type="submit"] {
+  text-transform: uppercase;
+  font-weight: 700;
+  background-color: $green;
+  color: $text;
+  cursor: pointer;
+  transition: all .5s ease;
+  &:hover {
+    background-color: $highlight;
+    color: $lowlight;
+  }
+}
+
+.morestuff {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14px;
+  & a {
+    transition: color .5s ease;
+  }
+  & a:link {
+    color: $green;
+  }
+
+  & a:hover {
+    color: $highlight;
+  }
+
+  & a:visited {
+    color: $lowlight;
+  }
+}

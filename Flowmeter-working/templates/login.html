@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href="/static/css/login.css">
+	<style type="text/css">
+		.container {
+		  width: 100%;
+		  height: 100%;
+		}
+
+		.left,
+		.right {
+		  float: left;
+		  width: 50%;
+		  height: 100vh;
+		}
+		.box h3 {background: linear-gradient(#4f71b5, #000000);color:white;padding:10px;}
+		.box p {color:#333;padding:6px;font-family:cursive;}
+		.box {
+			box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.7), 0 6px 20px 0 rgba(0, 0, 0, 0.3);
+            margin-left: 16%;
+    		margin-top: 31%;
+	        flex-direction: column;
+	        max-width: 388px;
+		    background-color: #c1e2f5;
+	    	padding: .5rem;
+		}
+
+	</style>
+	<title>Login</title>
+	<script src="static/js/jquery.js"></script>
+</head>
+{% block content %}
+<body style="display: contents;overflow-y: hidden;">
+<div class="container">
+  <div class="left" style="background: url('static/img/water_bg.jpeg');">
+
+	<div id="live_data" class="box">
+		<h3 style="margin-top: 1px;text-align: center;">LIVE FLOW METER READINGS</h3>
+
+		<span>
+		    <span style = "margin-bottom: -25px;"><p>Instant flow  : <span id = "flow"></span>&nbsp; (m³/h) </p></span>
+		    <span style = "margin-bottom: -25px;"><p>Total flow &nbsp; : <span id = "total_flow"></span>&nbsp; (m³) </p></span>
+		    <span><p>Time &nbsp;&nbsp;  : <span id = "time"></span></p></span>
+		</span>
+	</div>
+
+  </div>
+    <div class="right" style="background: linear-gradient(#4f71b5, #000000);">
+  		<div class="login" style="transform: translate(50%, -50%);">
+		    <form role="form" method="post" action = "{{ url_for('login') }}" style="background-color: #f7ffff;opacity: 0.9;">
+			    <span>
+	    	         <img src="static/img/logo.jpeg" width="300px" style="width: 92%;margin-left: 9px;margin-bottom: 26px;">
+	    		</span>
+
+		        <!-- <label for="username">Username:</label> -->
+		        <input type="text" id="username" name="username" placeholder="Username" required="">
+		        <!-- <label for="password">Password:</label> -->
+		        <input type="password" id="password" name="password" placeholder="Password" required="">
+		        <button type="submit" style="background: #191712;color: #f8f8f2;">Login</button>
+
+			    <b style="color: red">
+					{% if data.msg is not none %}
+						{{data.msg}}
+					{% endif %}
+				</b>
+			    <p><a href="{{ url_for('forgot') }}"  style="color: #26a69a;">Forgot password?</a></p>
+		    </form>
+		</div>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+function demo() {
+  console.log('called from logged in')
+	$(document).ready(function() {
+  		$.getJSON('/live', function(live) {
+		    document.getElementById("flow").innerText=live.flow
+		    document.getElementById("time").innerText=live.time
+		    document.getElementById("total_flow").innerText=live.total_flow
+		});
+	});
+}
+
+demo()
+setInterval("demo()",3000);
+</script>
+{% endblock %}
+</html>

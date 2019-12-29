@@ -1,0 +1,80 @@
+{% extends "login.html" %}
+
+{% block content %}
+<head>
+	<title>Reset</title>
+</head>
+
+
+<script type="text/javascript">
+function password_check() {
+	  var pass1 = document.getElementsByName('password')[0].value;
+	  var pass2 = document.getElementsByName('confirm-password')[0].value;
+	  if (pass1 == pass2)
+		  {
+		  	
+		  	return true;
+		  }
+	  else {
+		  	document.getElementById('patext').style="display:'';color: red;font-size: small;text-align: center;"
+		  	return false;
+		  }
+	}
+</script>
+
+<body style="display: contents;overflow-y: hidden;">
+<div class="container">
+  <div class="left" style="background: url('static/img/water_bg.jpeg');">
+
+	<div id="live_data" class="box">
+		<h3 style="margin-top: 1px;text-align: center;">LIVE FLOW METER READINGS</h3>
+
+		<span>
+		    <span style = "margin-bottom: -25px;"><p>Instant flow  : <span id = "flow"></span>&nbsp; (m³/h) </p></span>
+		    <span style = "margin-bottom: -25px;"><p>Total flow &nbsp; : <span id = "total_flow"></span>&nbsp; (m³) </p></span>
+		    <span><p>Time &nbsp;&nbsp;  : <span id = "time"></span></p></span>
+		</span>
+	</div>
+
+  </div>
+    <div class="right" style="background: linear-gradient(#4f71b5, #000000);">
+  		<div class="login" style="transform: translate(50%, -50%);">
+  			{% if not data.is_success %}
+			    <form role="form" action = "{{ url_for('reset') }}" style="background-color: #f7ffff;opacity: 0.8;">
+				    <span>
+		    	         <img src="static/img/logo.jpeg" width="300px" style="width: 92%;margin-left: 9px;margin-bottom: 26px;">
+		    		</span>
+			        <input type="text" id="username" name="username" placeholder="Enter Username" required="">
+			        <input id="date" name="dob" placeholder="MM/DD/YYY" type="date" style="font-family: inherit;font-size: inherit;color: dimgray;" required="">
+			        <input name = 'first' value='true' type="hidden">
+			        <button type="submit" style="background: #191712;color: #f8f8f2;">Continue</button>
+		    	<b style="color: red;font-size: small;text-align: center;">
+					{% if data.msg is not none %}
+						{{data.msg}}
+					{% endif %}
+				</b>
+			    </form>
+			{% elif data.is_success %}
+				<form  role="form" action = "{{ url_for('reset') }}" style="background-color: #f7ffff;opacity: 0.8;" onsubmit="return password_check()">
+					    <span>
+			    	         <img src="static/img/logo.jpeg" width="300px" style="width: 92%;margin-left: 9px;margin-bottom: 26px;">
+			    		</span>
+				        <input placeholder="Enter Password" name="password" type="password" required>
+				        <input placeholder="Re-enter Password" name="confirm-password" type="password" required>
+						<input type="hidden" name = 'second' value='true' >
+						<input type="hidden" name = 'username' value={{data.username}} >       
+						<button type="submit" style="background: #191712;color: #f8f8f2;">Reset Password</button>
+						<p id="patext" style="display: none;">Password must be same!</p>
+			    	<b style="color: red;">
+						{% if data.msg is not none %}
+							{{data.msg}}
+						{% endif %}
+					</b> 
+				 </form>
+			{% endif %}
+		</div>
+    </div>
+</div>
+</body>
+
+{% endblock %}
